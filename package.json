@@ -1,0 +1,48 @@
+{
+  "name": "thank-you-app",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && vitest run && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "wrangler-types": "wrangler types",
+    "wrangler-dev": "astro build && wrangler dev -- --ip 0.0.0.0 --port 8787",
+    "deploy-development": "npx wrangler@latest deploy --env=\"development\"",
+    "check": "astro check",
+    "test": "vitest",
+    "prettier": "prettier --write ."
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/cloudflare": "^13.3.0",
+    "@astrojs/react": "^5.0.4",
+    "@astrojs/sitemap": "^3.7.2",
+    "@nanostores/react": "^1.1.0",
+    "@tailwindcss/vite": "^4.2.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "ahooks": "^3.9.7",
+    "animejs": "^4.4.1",
+    "astro": "^6.2.1",
+    "jose": "^6.2.3",
+    "lodash": "^4.18.1",
+    "nanostores": "^1.3.0",
+    "p-queue": "^9.2.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.2.4",
+    "vitest": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/animejs": "^3.1.13",
+    "@types/lodash": "^4.17.24",
+    "prettier": "^3.8.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.8.0"
+  }
+}
