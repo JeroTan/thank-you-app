@@ -1,0 +1,1 @@
+export { GrassCanvas } from "./components/GrassCanvas";
