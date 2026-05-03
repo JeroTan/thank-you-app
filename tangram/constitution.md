@@ -1,9 +1,10 @@
 # Project Constitution
 
-**Version:** 1.1
+**Version:** 1.2
 **Last Updated:** 2026-05-03
 
 ## Changelog
+- **v1.2:** Added Principle 6 to mandate the use of Fluent Interfaces for complex modular functions to improve readability.
 - **v1.1:** Clarified the boundary between `src/components/` and `src/features/[feature]/components/`. Atomic, globally reusable visual elements MUST go in the former, while feature-locked logic goes in the latter.
 - **v1.0:** Initial establishment of architectural and documentation standards adapted for the Thank You App visualization MVP, including rules for atomic components and centralized state.
 
@@ -28,3 +29,7 @@
 ### 5. Centralized State Management
 > **Rationale:** Keeping state isolated from presentation logic is crucial for tracking data flow during complex interactions (like dragging and panning).
 **Enforcement Rule:** All global or shared application state MUST be managed and strictly stored within the `src/store/**` directory.
+
+### 6. Fluent Interface Modular Programming
+> **Rationale:** Increases code readability and discoverability by chaining operations into "human-readable" sentences, keeping complex modular functions less messy.
+**Enforcement Rule:** Complex logic builders, modular functions, and configurations MUST utilize the Fluent Interface pattern. Methods in these structures MUST return `this` (or the equivalent chained object) to allow continuous chaining of operations.
