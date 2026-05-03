@@ -6,6 +6,7 @@
 src/
 ├── assets/           # Static assets (e.g., repeating grass sprite for the canvas)
 ├── components/       # Globally reusable atomic UI components (e.g., visual/MapMarkerPin)
+│   └── mockdata/     # Mock data stores (e.g., thankYouData.ts)
 ├── features/
 │   └── map/          # The core visualization feature
 │       ├── components/ # Feature-locked components (e.g., SwingingPhysics)
@@ -16,9 +17,9 @@ src/
 ├── store/
 │   └── mapStore.ts   # Centralized state (pan, zoom, active marker)
 ├── utils/
+│   ├── mock/         # Mock fetching utilities (e.g., thankYouDataMockFetching.ts)
 │   ├── physics.ts    # Mathematical calculations for spacing and wrapping
 │   └── visual/       # Visual utilities (e.g., color.ts for hex manipulation)
 └── pages/
     └── index.astro   # Main entry point mounting the React Island
-```kers and strings.
-  - **Physics**: Anime.js powers the swinging/oscillating motion of the strings when a marker is dragged.
+```
