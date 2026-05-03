@@ -22,7 +22,6 @@ export async function loadCanvasImageAsset(src: string): Promise<HTMLImageElemen
     const image = new Image();
 
     image.decoding = "async";
-    image.crossOrigin = "anonymous";
     image.onload = async () => {
       await decodeLoadedImage(image);
       resolve(image);

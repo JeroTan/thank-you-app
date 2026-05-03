@@ -15,6 +15,11 @@ export type MapMarkerRenderSpec = {
   baseWidthAtScaleOne: number;
 };
 
+export type MarkerFeatureData = {
+  specs: MapMarkerRenderSpec[];
+  worldSize: { width: number; height: number };
+};
+
 type MarkerRenderSpecOptions = {
   seed?: number;
   baseWidthAtScaleOne?: number;
@@ -33,7 +38,7 @@ function resolveFallbackInitial(label: string): string {
 export function createMarkerRenderSpecs(
   data: ThankYouDataType[],
   options: MarkerRenderSpecOptions = {}
-): MapMarkerRenderSpec[] {
+): MarkerFeatureData {
   const baseWidthAtScaleOne = options.baseWidthAtScaleOne ?? resolveMarkerBaseWidthAtReference();
   const worldPositions = createStableMarkerWorldPositions(data.length, {
     seed: options.seed,
@@ -41,7 +46,23 @@ export function createMarkerRenderSpecs(
     minDistance: Math.max(96, Math.round(baseWidthAtScaleOne * 2.35))
   });
 
-  return data.map((item, index) => {
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  for (const pos of worldPositions) {
+    minX = Math.min(minX, pos.x);
+    maxX = Math.max(maxX, pos.x);
+    minY = Math.min(minY, pos.y);
+    maxY = Math.max(maxY, pos.y);
+  }
+  
+  // 50% padding equals to the total viewport size
+  const paddingX = 1000; // MAP_REFERENCE_VIEWPORT.width
+  const paddingY = 1000; // MAP_REFERENCE_VIEWPORT.height
+  const worldSize = {
+    width: Math.max(paddingX * 2, (maxX - minX) + paddingX),
+    height: Math.max(paddingY * 2, (maxY - minY) + paddingY)
+  };
+
+  const specs = data.map((item, index) => {
     const label = resolveMarkerLabel(item.full_name);
 
     return {
@@ -54,4 +75,6 @@ export function createMarkerRenderSpecs(
       baseWidthAtScaleOne
     };
   });
+
+  return { specs, worldSize };
 }

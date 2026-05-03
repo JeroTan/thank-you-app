@@ -26,6 +26,7 @@ type MarkerSceneState = {
   scaleSnapshot: MapScaleSnapshot;
   pixelRatio: number;
   tileOrigin: MapTileOrigin;
+  worldSize?: { width: number; height: number };
   markerImageRegistry: Record<string, HTMLImageElement>;
 };
 
@@ -56,7 +57,8 @@ class MarkerCanvasScene {
         height: scaleSnapshot.height,
         scale: scaleSnapshot.scale
       },
-      this.state.tileOrigin
+      this.state.tileOrigin,
+      this.state.worldSize
     );
 
     const markerSize = resolveMarkerCanvasSize(scaleSnapshot);
@@ -135,8 +137,32 @@ class MarkerCanvasScene {
     const image = picture ? this.state.markerImageRegistry[picture] : undefined;
 
     if (image) {
+      context.fillStyle = "#D9D9D9";
+      context.fillRect(
+        avatarCenterX - avatarRadius,
+        avatarCenterY - avatarRadius,
+        avatarRadius * 2,
+        avatarRadius * 2
+      );
+
+      const imageAspect = image.width / image.height;
+      const targetAspect = 1;
+      let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
+
+      if (imageAspect > targetAspect) {
+        sWidth = image.height * targetAspect;
+        sx = (image.width - sWidth) / 2;
+      } else {
+        sHeight = image.width / targetAspect;
+        sy = (image.height - sHeight) / 2;
+      }
+
       context.drawImage(
         image,
+        sx,
+        sy,
+        sWidth,
+        sHeight,
         avatarCenterX - avatarRadius,
         avatarCenterY - avatarRadius,
         avatarRadius * 2,
@@ -215,6 +241,7 @@ export class MarkerSceneBuilder {
   private scaleSnapshot: MapScaleSnapshot | null = null;
   private pixelRatio = 1;
   private tileOrigin: MapTileOrigin = { x: 0, y: 0 };
+  private worldSize?: { width: number; height: number };
   private markerImageRegistry: Record<string, HTMLImageElement> = {};
 
   public attachCanvas(canvas: HTMLCanvasElement): this {
@@ -245,6 +272,12 @@ export class MarkerSceneBuilder {
 
   public withTileOrigin(tileOrigin: MapTileOrigin): this {
     this.tileOrigin = tileOrigin;
+
+    return this;
+  }
+
+  public withWorldSize(worldSize: { width: number; height: number }): this {
+    this.worldSize = worldSize;
 
     return this;
   }
@@ -290,6 +323,7 @@ export class MarkerSceneBuilder {
       scaleSnapshot: this.scaleSnapshot,
       pixelRatio: this.pixelRatio,
       tileOrigin: this.tileOrigin,
+      worldSize: this.worldSize,
       markerImageRegistry: this.markerImageRegistry
     });
   }

@@ -116,9 +116,9 @@ export function GrassCanvas() {
       return;
     }
 
-    const markerSpecs = createMarkerRenderSpecs(thankYouData, { seed: 42 });
+    const { specs, worldSize } = createMarkerRenderSpecs(thankYouData, { seed: 42 });
 
-    const specsForCanvas = markerSpecs.map((spec) => ({
+    const specsForCanvas = specs.map((spec) => ({
       id: spec.id,
       frameColor: spec.frameColor,
       label: spec.label,
@@ -133,6 +133,7 @@ export function GrassCanvas() {
       .withScaleSnapshot(scaleSnapshot)
       .withPixelRatio(scaleSnapshot.devicePixelRatio)
       .withTileOrigin(tileOrigin)
+      .withWorldSize(worldSize)
       .withMarkerImageRegistry(markerImageRegistry)
       .withMarkerSpecs(specsForCanvas)
       .build()

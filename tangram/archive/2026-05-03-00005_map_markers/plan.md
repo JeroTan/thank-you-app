@@ -20,27 +20,27 @@
 ## III. Atomic Task List
 
 ### Marker Spec & Layout
-- [ ] **Task 1: Define the Shared Marker Render Spec**
+- [x] **Task 1: Define the Shared Marker Render Spec**
   > **Detailed Summary:** Add a feature-local marker render spec that converts entries from `src/components/mockdata/thankYouData.ts` into canvas-ready marker data. The spec should include the data needed to draw the pin body, avatar or fallback initial, and label text, while remaining independent from a specific renderer so future fallback or alternate renderers can consume the same payload.
 
-- [ ] **Task 2: Build Stable Marker Positioning Logic**
+- [x] **Task 2: Build Stable Marker Positioning Logic**
   > **Detailed Summary:** Add pure layout utilities under `src/features/map/utils/**` or `src/utils/map/**` that compute world-space marker positions before the visible scene appears and keep them stable for the session. The layout should respect the current `1000x1000` reference scale, apply spacing rules to avoid visible overlap at the base marker size, and leave a future seam for content-aware distribution without implementing thank-you-based scaling yet.
 
-- [ ] **Task 3: Derive the Base Marker Size Contract**
+- [x] **Task 3: Derive the Base Marker Size Contract**
   > **Detailed Summary:** Add reusable size helpers that resolve base marker width from the smaller viewport dimension at scale `1.0`, targeting approximately `5%` of that dimension. The contract should preserve the current viewport-scaling model so markers remain visually consistent across desktop and mobile without introducing count-based or thank-you-based resizing yet.
 
 ### Canvas Rendering
-- [ ] **Task 4: Create a Marker Canvas Scene Builder**
+- [x] **Task 4: Create a Marker Canvas Scene Builder**
   > **Detailed Summary:** Add a fluent marker scene or sprite builder under `src/features/map/utils/**` that encapsulates marker sprite setup, avatar preparation, fallback-initial drawing, and label measurement or truncation rules. The builder should treat `src/components/visual/MapMarkerPin.tsx` as the visual reference while producing canvas-drawing inputs instead of mounting the React component directly.
 
-- [ ] **Task 5: Add a Marker Canvas Layer to the Map Surface**
+- [x] **Task 5: Add a Marker Canvas Layer to the Map Surface**
   > **Detailed Summary:** Extend the current map surface with a dedicated marker canvas layer or equivalent modular canvas rendering path above the grass background. The marker layer must consume the shared world offset, translate world-space marker positions into viewport-space draw positions, and render the full marker visual in canvas without breaking the existing background or panning behavior.
 
-- [ ] **Task 6: Render Mock Data Markers with Correct Visual Variants**
+- [x] **Task 6: Render Mock Data Markers with Correct Visual Variants**
   > **Detailed Summary:** Use the shared marker render spec and the current mock data to render all markers with the correct `frame_color`, avatar-or-initial behavior, and label content. This task must verify that picture and no-picture markers render correctly and that labels are truncated or clipped consistently when they exceed the intended width.
 
 ### Safety & Verification
-- [ ] **Task 7: Preserve Modularity and Add Marker Verification Coverage**
+- [x] **Task 7: Preserve Modularity and Add Marker Verification Coverage**
   > **Detailed Summary:** Add targeted verification for the marker size helpers, position-generation logic, and world-to-viewport conversion using the current test pattern where practical, then define the manual checks needed for render correctness, non-overlap, viewport-relative sizing, and pan alignment. This task should keep the marker layer modular so strings and marker interactions can be added later without replacing the marker renderer.
 
 ## IV. Critical Path & Dependencies
