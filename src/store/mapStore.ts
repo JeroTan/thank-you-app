@@ -1,5 +1,6 @@
 import { atom, computed } from "nanostores";
 
+import type { MapMarkerRenderSpec } from "@/features/map/utils/markerRenderSpec";
 import {
   createMapScaleSnapshot,
   clampWorldOffset,
@@ -17,6 +18,7 @@ export type MapAssetStatus = "idle" | "loading" | "ready" | "error";
 export const mapScaleStore = atom<MapScaleSnapshot>(createMapScaleSnapshot());
 export const mapAssetStatusStore = atom<MapAssetStatus>("idle");
 export const mapWorldOffsetStore = atom<MapWorldOffset>({ x: 0, y: 0 });
+export const mapMarkerRenderSpecStore = atom<MapMarkerRenderSpec[]>([]);
 export const mapPanInteractionStore = atom<MapPanInteractionState>({
   isActive: false,
   inputMode: null,
@@ -42,6 +44,10 @@ export function setMapViewport(viewport: Partial<MapViewport>): void {
 
 export function setMapAssetStatus(status: MapAssetStatus): void {
   mapAssetStatusStore.set(status);
+}
+
+export function setMapMarkerRenderSpecs(markerRenderSpecs: MapMarkerRenderSpec[]): void {
+  mapMarkerRenderSpecStore.set(markerRenderSpecs);
 }
 
 export function setMapWorldOffset(worldOffset: MapWorldOffset): void {

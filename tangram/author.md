@@ -2,5 +2,5 @@
 
 - Last planner: GitHub Copilot
 - Planning date: 2026-05-03
-- Active feature: 00004_pan_interaction
-- Active directives: Panning-only slice, mouse/touch/trackpad/keyboard input, shared world offsets, minimum world reference 1000x1000, fluent modular interfaces.
+- Active feature: 00005_map_markers
+- Active directives: Canvas-first marker rendering, shared marker render spec, stable per-session layout, base marker width equals about 5% of the smaller viewport dimension at scale 1.0, no strings or interaction yet.
