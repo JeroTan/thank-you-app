@@ -4,21 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import grassSquareTile from "@/assets/sprite/grass_square_tile.png";
 import {
   mapAssetStatusStore,
+  mapPanInteractionStore,
   mapScaleStore,
   mapTileOriginStore,
   setMapAssetStatus
 } from "@/store/mapStore";
 
 import { useCanvasResize } from "../hooks/useCanvasResize";
+import { usePanInteraction } from "../hooks/usePanInteraction";
 import { loadCanvasImageAssets } from "../utils/assetLoader";
 import { GrassSceneBuilder } from "../utils/grassSceneBuilder";
 
 export function GrassCanvas() {
   useCanvasResize();
+  const surfaceRef = useRef<HTMLElement | null>(null);
+  usePanInteraction(surfaceRef);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tileImage, setTileImage] = useState<HTMLImageElement | null>(null);
   const assetStatus = useStore(mapAssetStatusStore);
+  const panInteraction = useStore(mapPanInteractionStore);
   const scaleSnapshot = useStore(mapScaleStore);
   const tileOrigin = useStore(mapTileOriginStore);
   const isReady = assetStatus === "ready";
@@ -76,9 +81,13 @@ export function GrassCanvas() {
 
   return (
     <section
+      ref={surfaceRef}
       aria-busy={!isReady}
       aria-label="Thank You map canvas"
-      className="relative h-dvh min-h-dvh w-full overflow-hidden bg-[#315723]"
+      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+      tabIndex={0}
+      className="relative h-dvh min-h-dvh w-full touch-none overflow-hidden bg-[#315723] outline-none select-none"
+      style={{ cursor: panInteraction.cursor }}
     >
       <canvas
         ref={canvasRef}
@@ -87,7 +96,7 @@ export function GrassCanvas() {
       />
 
       {!isReady ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#315723]">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#315723]">
           <div className="flex min-w-48 flex-col items-center gap-4 rounded-2xl border border-white/20 bg-black/20 px-6 py-5 text-center text-white backdrop-blur-sm">
             <span className="h-3 w-3 animate-pulse rounded-full bg-[#cde78b]" />
             <p className="text-sm font-semibold tracking-[0.24em] uppercase">{statusTitle}</p>

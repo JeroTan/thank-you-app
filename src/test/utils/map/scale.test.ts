@@ -1,8 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
+  clampWorldOffset,
   createMapScaleSnapshot,
+  resolveKeyboardPanDelta,
+  resolveNextWorldOffset,
   resolveCanvasBackingStore,
   resolveGrassTileDrawSize,
+  resolveTileOriginFromWorldOffset,
+  resolveWorldOffsetDeltaFromPixels,
+  resolveWorldOffsetDeltaFromWheel,
+  resolveWorldOffsetFromPixelDelta,
   resolveWrappedTileStart,
   MAP_REFERENCE_VIEWPORT
 } from "../../../utils/map/scale";
@@ -107,6 +114,48 @@ describe("Map Scale Utility", () => {
 
     it("should enforce MIN_POSITIVE_SIZE for tileSize (Bad Path / Edge Case)", () => {
       expect(resolveWrappedTileStart(5, 0)).toBe(-1);
+    });
+  });
+
+  describe("panning helpers", () => {
+    it("should convert pixel drag delta into world offset delta using scale (Happy Path)", () => {
+      expect(resolveWorldOffsetFromPixelDelta(10, { scale: 0.5 })).toBe(20);
+      expect(resolveWorldOffsetDeltaFromPixels({ x: 12, y: -8 }, { scale: 0.5 })).toEqual({
+        x: 24,
+        y: -16
+      });
+    });
+
+    it("should invert wheel deltas for trackpad pan behavior (Happy Path)", () => {
+      expect(resolveWorldOffsetDeltaFromWheel({ x: 12, y: -8 }, { scale: 1 })).toEqual({
+        x: -12,
+        y: 8
+      });
+    });
+
+    it("should return scaled keyboard deltas for arrow pan (Happy Path)", () => {
+      expect(resolveKeyboardPanDelta("right", { scale: 0.5 })).toEqual({ x: 96, y: 0 });
+      expect(resolveKeyboardPanDelta("up", { scale: 1 })).toEqual({ x: 0, y: -48 });
+    });
+
+    it("should clamp world offsets when bounds exist (Edge Case)", () => {
+      expect(
+        clampWorldOffset({ x: 200, y: -200 }, { minX: -100, maxX: 100, minY: -50, maxY: 50 })
+      ).toEqual({
+        x: 100,
+        y: -50
+      });
+    });
+
+    it("should resolve the next world offset with additive deltas (Happy Path)", () => {
+      expect(resolveNextWorldOffset({ x: 20, y: -10 }, { x: 15, y: 5 })).toEqual({ x: 35, y: -5 });
+    });
+
+    it("should derive tile origin from the normalized world offset (Happy Path)", () => {
+      expect(resolveTileOriginFromWorldOffset({ x: 20, y: -10 }, { scale: 0.5 })).toEqual({
+        x: 10,
+        y: -5
+      });
     });
   });
 });
