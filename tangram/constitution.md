@@ -1,9 +1,10 @@
 # Project Constitution
 
-**Version:** 1.0
-**Last Updated:** 2026-05-02
+**Version:** 1.1
+**Last Updated:** 2026-05-03
 
 ## Changelog
+- **v1.1:** Clarified the boundary between `src/components/` and `src/features/[feature]/components/`. Atomic, globally reusable visual elements MUST go in the former, while feature-locked logic goes in the latter.
 - **v1.0:** Initial establishment of architectural and documentation standards adapted for the Thank You App visualization MVP, including rules for atomic components and centralized state.
 
 ## Core Principles
@@ -22,7 +23,7 @@
 
 ### 4. Atomic Component Design
 > **Rationale:** Breaking down the UI into atomic, single-responsibility components ensures that complex visual logic (like physics and markers) is highly traceable and maintainable.
-**Enforcement Rule:** All UI elements MUST be built as atomic components. Complex views MUST be composed of smaller, predictable pieces.
+**Enforcement Rule:** All UI elements MUST be built as atomic components. Complex views MUST be composed of smaller, predictable pieces. Atomic, purely visual components that can be used *anywhere* across different features MUST be placed in `src/components/`. Components that are strictly tied to a specific feature's business logic MUST be placed in `src/features/[feature]/components/`.
 
 ### 5. Centralized State Management
 > **Rationale:** Keeping state isolated from presentation logic is crucial for tracking data flow during complex interactions (like dragging and panning).
