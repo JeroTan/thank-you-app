@@ -19,22 +19,33 @@ export function MapMarkerPin({
   const markerColor = toHexColorString(hexColor);
   const fallbackColor = toHexColorString(invertColor(hexColor));
   const initial = name.trim().charAt(0).toUpperCase() || "U";
+  const textColor = "#f8f7f2";
+  const textStrokeColor = "rgba(15, 15, 15, 0.72)";
 
   return (
-    <>
-      {/** It is 100% on width and height to make it responsive */}
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "387px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center"
+      }}
+    >
+      {/** Scale down responsively, but do not grow wider than the marker art. */}
       <svg
         width="100%"
-        height="100%"
+        height="auto"
         viewBox="0 0 387 486"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ display: "block" }}
       >
         {/* Marker vector design */}
         <g filter="url(#filter0_d_1_8)">
           <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
+            fillRule="evenodd"
+            clipRule="evenodd"
             d="M193.5 4C297.606 4 382 88.3943 382 192.5C382 272.322 332.385 340.557 262.312 368.046L202.732 474.43C201.522 476.091 199.914 477.448 198.045 478.384C196.177 479.321 194.102 479.81 191.996 479.81C189.89 479.81 187.815 479.321 185.947 478.384C184.078 477.448 182.47 476.091 181.26 474.43L124.683 368.043C54.6123 340.553 5 272.32 5 192.5C5 88.3943 89.3943 4 193.5 4Z"
             fill={markerColor}
           />
@@ -51,13 +62,16 @@ export function MapMarkerPin({
             width="317"
             height="317"
             preserveAspectRatio="xMidYMid slice"
-            clipPath={"url(#" + clipId + ")"}
+            clipPath={`url(#${clipId})`}
           />
         ) : (
           <text
             x="193.5"
             y="192.5"
-            fill={markerColor}
+            fill={textColor}
+            stroke={textStrokeColor}
+            strokeWidth="5"
+            paintOrder="stroke"
             fontSize="140"
             fontWeight="700"
             textAnchor="middle"
@@ -80,9 +94,9 @@ export function MapMarkerPin({
             width="387"
             height="485.81"
             filterUnits="userSpaceOnUse"
-            color-interpolation-filters="sRGB"
+            colorInterpolationFilters="sRGB"
           >
-            <feFlood flood-opacity="0" result="BackgroundImageFix" />
+            <feFlood floodOpacity="0" result="BackgroundImageFix" />
             <feColorMatrix
               in="SourceAlpha"
               type="matrix"
@@ -98,6 +112,27 @@ export function MapMarkerPin({
           </filter>
         </defs>
       </svg>
-    </>
+
+      <div
+        title={name}
+        style={{
+          width: "100%",
+          minWidth: 0,
+          marginTop: "0.5rem",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          textAlign: "center",
+          color: textColor,
+          fontWeight: 600,
+          lineHeight: 1.2,
+          fontSize: "clamp(0.875rem, 2.2vw, 1rem)",
+          WebkitTextStroke: `0.65px ${textStrokeColor}`,
+          textShadow: "0 1px 1px rgba(15, 15, 15, 0.45), 0 0 1px rgba(15, 15, 15, 0.6)"
+        }}
+      >
+        {name}
+      </div>
+    </div>
   );
 }
