@@ -26,7 +26,9 @@ export function GrassCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const markerCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tileImage, setTileImage] = useState<HTMLImageElement | null>(null);
-  const [markerImageRegistry, setMarkerImageRegistry] = useState<Record<string, HTMLImageElement>>({});
+  const [markerImageRegistry, setMarkerImageRegistry] = useState<Record<string, HTMLImageElement>>(
+    {}
+  );
   const assetStatus = useStore(mapAssetStatusStore);
   const panInteraction = useStore(mapPanInteractionStore);
   const scaleSnapshot = useStore(mapScaleStore);
@@ -39,7 +41,11 @@ export function GrassCanvas() {
     setMapAssetStatus("loading");
 
     const avatarUrls = Array.from(
-      new Set(thankYouData.map((item) => item.picture).filter((picture): picture is string => Boolean(picture)))
+      new Set(
+        thankYouData
+          .map((item) => item.picture)
+          .filter((picture): picture is string => Boolean(picture))
+      )
     );
 
     const markerImagePromises = avatarUrls.map(async (src) => {
@@ -61,15 +67,17 @@ export function GrassCanvas() {
           results.filter((entry): entry is readonly [string, HTMLImageElement] => entry !== null)
         );
 
-        return loadCanvasImageAssets([{ key: "grassTile", src: grassSquareTile.src }]).then((assets) => {
-          if (!isActive) {
-            return;
-          }
+        return loadCanvasImageAssets([{ key: "grassTile", src: grassSquareTile.src }]).then(
+          (assets) => {
+            if (!isActive) {
+              return;
+            }
 
-          setTileImage(assets.grassTile);
-          setMarkerImageRegistry(loadedMarkerImages);
-          setMapAssetStatus("ready");
-        });
+            setTileImage(assets.grassTile);
+            setMarkerImageRegistry(loadedMarkerImages);
+            setMapAssetStatus("ready");
+          }
+        );
       })
       .catch((error: unknown) => {
         if (!isActive) {

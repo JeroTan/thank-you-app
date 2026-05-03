@@ -1,4 +1,8 @@
-import { resolveCanvasBackingStore, type MapScaleSnapshot, type MapTileOrigin } from "@/utils/map/scale";
+import {
+  resolveCanvasBackingStore,
+  type MapScaleSnapshot,
+  type MapTileOrigin
+} from "@/utils/map/scale";
 import { invertColor, toHexColorString } from "@/utils/visual/color";
 import { resolveMarkerCanvasSize, MARKER_VIEWBOX } from "./markerSize";
 import { resolveMarkerViewportPosition } from "./markerPositioning";
@@ -63,8 +67,22 @@ class MarkerCanvasScene {
     const topY = viewportPos.y - height * 0.15;
 
     this.drawMarkerFrame(context, centerX, topY, width, spec.frameColor);
-    this.drawMarkerAvatar(context, centerX, topY, width, spec.picture, spec.fallbackInitial, spec.frameColor);
-    this.drawMarkerLabel(context, centerX, topY + height + markerSize.labelGap, markerSize, spec.label);
+    this.drawMarkerAvatar(
+      context,
+      centerX,
+      topY,
+      width,
+      spec.picture,
+      spec.fallbackInitial,
+      spec.frameColor
+    );
+    this.drawMarkerLabel(
+      context,
+      centerX,
+      topY + height + markerSize.labelGap,
+      markerSize,
+      spec.label
+    );
   }
 
   private drawMarkerFrame(
@@ -132,7 +150,13 @@ class MarkerCanvasScene {
         avatarRadius * 2,
         avatarRadius * 2
       );
-      this.drawFallbackInitial(context, avatarCenterX, avatarCenterY, avatarRadius, fallbackInitial);
+      this.drawFallbackInitial(
+        context,
+        avatarCenterX,
+        avatarCenterY,
+        avatarRadius,
+        fallbackInitial
+      );
     }
 
     context.restore();

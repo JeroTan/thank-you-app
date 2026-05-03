@@ -19,7 +19,10 @@ export type MarkerCanvasSize = {
 export function resolveMarkerBaseWidth(
   viewport: Pick<MapScaleSnapshot, "width" | "height">
 ): number {
-  return Math.max(1, Math.round(Math.min(viewport.width, viewport.height) * MARKER_BASE_VIEWPORT_RATIO));
+  return Math.max(
+    1,
+    Math.round(Math.min(viewport.width, viewport.height) * MARKER_BASE_VIEWPORT_RATIO)
+  );
 }
 
 export function resolveMarkerBaseWidthAtReference(): number {

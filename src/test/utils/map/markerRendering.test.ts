@@ -35,7 +35,10 @@ describe("Marker Rendering Utilities", () => {
   describe("createStableMarkerWorldPositions", () => {
     it("should return a stable layout for the same seed (Happy Path)", () => {
       const firstLayout = createStableMarkerWorldPositions(10, { seed: 1234, markerBaseWidth: 50 });
-      const secondLayout = createStableMarkerWorldPositions(10, { seed: 1234, markerBaseWidth: 50 });
+      const secondLayout = createStableMarkerWorldPositions(10, {
+        seed: 1234,
+        markerBaseWidth: 50
+      });
 
       expect(firstLayout).toEqual(secondLayout);
     });
