@@ -64,16 +64,16 @@ export function createStableMarkerWorldPositions(
 
 export function resolveMarkerViewportPosition(
   worldPosition: MapWorldOffset,
-  scaleSnapshot: Pick<MapScaleSnapshot, "width" | "height" | "scale">,
+  scaleSnapshot: Pick<MapScaleSnapshot, "width" | "height" | "effectiveScale">,
   tileOrigin: MapTileOrigin,
   worldSize?: { width: number; height: number }
 ): MarkerViewportPosition {
-  let offsetX = worldPosition.x * scaleSnapshot.scale + tileOrigin.x;
-  let offsetY = worldPosition.y * scaleSnapshot.scale + tileOrigin.y;
+  let offsetX = worldPosition.x * scaleSnapshot.effectiveScale + tileOrigin.x;
+  let offsetY = worldPosition.y * scaleSnapshot.effectiveScale + tileOrigin.y;
 
   if (worldSize) {
-    const wrapWidth = worldSize.width * scaleSnapshot.scale;
-    const wrapHeight = worldSize.height * scaleSnapshot.scale;
+    const wrapWidth = worldSize.width * scaleSnapshot.effectiveScale;
+    const wrapHeight = worldSize.height * scaleSnapshot.effectiveScale;
     
     // Wrap the marker so it appears within the nearest copy of the world
     const halfWidth = wrapWidth / 2;

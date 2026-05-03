@@ -13,15 +13,18 @@ import {
 
 import { useCanvasResize } from "../hooks/useCanvasResize";
 import { usePanInteraction } from "../hooks/usePanInteraction";
+import { useZoomInteraction } from "../hooks/useZoomInteraction";
 import { loadCanvasImageAsset, loadCanvasImageAssets } from "../utils/assetLoader";
 import { GrassSceneBuilder } from "../utils/grassSceneBuilder";
 import { MarkerSceneBuilder } from "../utils/markerSceneBuilder";
 import { createMarkerRenderSpecs } from "../utils/markerRenderSpec";
+import { ZoomControls } from "./ZoomControls";
 
 export function GrassCanvas() {
   useCanvasResize();
   const surfaceRef = useRef<HTMLElement | null>(null);
   usePanInteraction(surfaceRef);
+  useZoomInteraction(surfaceRef);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const markerCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -102,7 +105,7 @@ export function GrassCanvas() {
       .attachCanvas(canvasRef.current)
       .withViewport(scaleSnapshot.width, scaleSnapshot.height)
       .withPixelRatio(scaleSnapshot.devicePixelRatio)
-      .withGlobalScale(scaleSnapshot.scale)
+      .withGlobalScale(scaleSnapshot.effectiveScale)
       .withTileImage(tileImage)
       .withTileOrigin(tileOrigin)
       .withFallbackColor("#315723")
@@ -167,6 +170,8 @@ export function GrassCanvas() {
         aria-hidden="true"
         className={`absolute inset-0 block h-full w-full transition-opacity duration-300 ${isReady ? "opacity-100" : "opacity-0"}`}
       />
+
+      {isReady && <ZoomControls />}
 
       {!isReady ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#315723]">

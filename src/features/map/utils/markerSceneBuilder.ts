@@ -55,7 +55,7 @@ class MarkerCanvasScene {
       {
         width: scaleSnapshot.width,
         height: scaleSnapshot.height,
-        scale: scaleSnapshot.scale
+        effectiveScale: scaleSnapshot.effectiveScale
       },
       this.state.tileOrigin,
       this.state.worldSize

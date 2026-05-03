@@ -59,7 +59,7 @@ class GrassCanvasScene {
     context.fillRect(0, 0, viewportWidth, viewportHeight);
 
     const tileDrawSize = resolveGrassTileDrawSize(
-      { scale: globalScale },
+      { effectiveScale: globalScale },
       tileImage.naturalWidth || tileImage.width
     );
     const startX = resolveWrappedTileStart(tileOrigin.x, tileDrawSize);

@@ -70,8 +70,8 @@ describe("Marker Rendering Utilities", () => {
     it("should convert mock data into marker render specs (Happy Path)", () => {
       const markerRenderSpecs = createMarkerRenderSpecs(thankYouData, { seed: 42 });
 
-      expect(markerRenderSpecs).toHaveLength(thankYouData.length);
-      expect(markerRenderSpecs[0]).toMatchObject({
+      expect(markerRenderSpecs.specs).toHaveLength(thankYouData.length);
+      expect(markerRenderSpecs.specs[0]).toMatchObject({
         id: 1,
         frameColor: 0x554433,
         label: "Jonathan",
@@ -86,10 +86,11 @@ describe("Marker Rendering Utilities", () => {
       expect(
         resolveMarkerViewportPosition(
           { x: 100, y: -50 },
-          { width: 1000, height: 1000, scale: 0.5 } as any,
+          { width: 1000, height: 1000, effectiveScale: 0.5 } as any,
           { x: 20, y: -10 }
         )
       ).toEqual({ x: 570, y: 465 });
     });
   });
 });
+;

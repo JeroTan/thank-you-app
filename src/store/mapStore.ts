@@ -6,6 +6,7 @@ import {
   clampWorldOffset,
   resolveTileOriginFromWorldOffset,
   resolveWorldOffsetFromPixelDelta,
+  MAP_REFERENCE_VIEWPORT,
   type MapPanInteractionState,
   type MapScaleSnapshot,
   type MapTileOrigin,
@@ -15,7 +16,20 @@ import {
 
 export type MapAssetStatus = "idle" | "loading" | "ready" | "error";
 
-export const mapScaleStore = atom<MapScaleSnapshot>(createMapScaleSnapshot());
+export const mapViewportStore = atom<MapViewport>({
+  width: MAP_REFERENCE_VIEWPORT.width,
+  height: MAP_REFERENCE_VIEWPORT.height,
+  devicePixelRatio: 1,
+  userZoom: 1.0
+});
+
+export const mapZoomStore = atom<number>(1.0);
+
+export const mapScaleStore = computed(
+  [mapViewportStore, mapZoomStore],
+  (viewport, userZoom) => createMapScaleSnapshot({ ...viewport, userZoom })
+);
+
 export const mapAssetStatusStore = atom<MapAssetStatus>("idle");
 export const mapWorldOffsetStore = atom<MapWorldOffset>({ x: 0, y: 0 });
 export const mapMarkerRenderSpecStore = atom<MapMarkerRenderSpec[]>([]);
@@ -31,15 +45,12 @@ export const mapTileOriginStore = computed(
 );
 
 export function setMapViewport(viewport: Partial<MapViewport>): void {
-  const currentViewport = mapScaleStore.get();
+  const currentViewport = mapViewportStore.get();
 
-  mapScaleStore.set(
-    createMapScaleSnapshot({
-      width: viewport.width ?? currentViewport.width,
-      height: viewport.height ?? currentViewport.height,
-      devicePixelRatio: viewport.devicePixelRatio ?? currentViewport.devicePixelRatio
-    })
-  );
+  mapViewportStore.set({
+    ...currentViewport,
+    ...viewport
+  });
 }
 
 export function setMapAssetStatus(status: MapAssetStatus): void {

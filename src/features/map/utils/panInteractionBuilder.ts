@@ -8,7 +8,7 @@ import {
   type MapWorldOffset
 } from "@/utils/map/scale";
 
-type ScaleSource = () => Pick<MapScaleSnapshot, "scale">;
+type ScaleSource = () => Pick<MapScaleSnapshot, "effectiveScale">;
 type WorldOffsetDeltaHandler = (delta: MapWorldOffset) => void;
 type PanInteractionStateHandler = (state: Partial<MapPanInteractionState>) => void;
 
@@ -317,7 +317,7 @@ class BuiltPanInteractionController implements PanInteractionController {
 export class PanInteractionBuilder {
   private dragSensitivity = 1;
   private element: HTMLElement | null = null;
-  private getScale: ScaleSource = () => ({ scale: 1 });
+  private getScale: ScaleSource = () => ({ effectiveScale: 1 });
   private keyboardStep = 48;
   private onInteractionStateChange: PanInteractionStateHandler = () => undefined;
   private onWorldOffsetDelta: WorldOffsetDeltaHandler = () => undefined;

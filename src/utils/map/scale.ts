@@ -7,10 +7,12 @@ export type MapViewport = {
   width: number;
   height: number;
   devicePixelRatio: number;
+  userZoom: number;
 };
 
 export type MapScaleSnapshot = MapViewport & {
   scale: number;
+  effectiveScale: number;
   normalizedWidth: number;
   normalizedHeight: number;
 };
@@ -109,18 +111,22 @@ export function createMapScaleSnapshot(viewport: Partial<MapViewport> = {}): Map
     )
   );
   const devicePixelRatio = sanitizePositiveNumber(viewport.devicePixelRatio ?? 1, 1);
+  const userZoom = sanitizePositiveNumber(viewport.userZoom ?? 1, 1);
   const normalizedWidth = width / MAP_REFERENCE_VIEWPORT.width;
   const normalizedHeight = height / MAP_REFERENCE_VIEWPORT.height;
   const scale = Math.max(
     MIN_POSITIVE_SIZE / MAP_REFERENCE_VIEWPORT.width,
     Math.min(normalizedWidth, normalizedHeight)
   );
+  const effectiveScale = scale * userZoom;
 
   return {
     width,
     height,
     devicePixelRatio,
+    userZoom,
     scale,
+    effectiveScale,
     normalizedWidth,
     normalizedHeight
   };
@@ -136,12 +142,12 @@ export function resolveCanvasBackingStore(
 }
 
 export function resolveGrassTileDrawSize(
-  scale: Pick<MapScaleSnapshot, "scale">,
+  scale: Pick<MapScaleSnapshot, "effectiveScale">,
   imageWidth: number
 ): number {
   const safeImageWidth = sanitizePositiveNumber(imageWidth, DEFAULT_TILE_SIZE);
 
-  return Math.max(96, Math.round(safeImageWidth * Math.max(scale.scale, 0.5)));
+  return Math.max(96, Math.round(safeImageWidth * Math.max(scale.effectiveScale, 0.5)));
 }
 
 export function resolveWrappedTileStart(offset: number, tileSize: number): number {
@@ -163,14 +169,14 @@ export function clampWorldOffset(
 
 export function resolveWorldOffsetFromPixelDelta(
   pixelDelta: number,
-  scale: Pick<MapScaleSnapshot, "scale">
+  scale: Pick<MapScaleSnapshot, "effectiveScale">
 ): number {
-  return sanitizeFiniteNumber(pixelDelta) / sanitizeScaleValue(scale.scale);
+  return sanitizeFiniteNumber(pixelDelta) / sanitizeScaleValue(scale.effectiveScale);
 }
 
 export function resolveWorldOffsetDeltaFromPixels(
   delta: Partial<MapWorldOffset>,
-  scale: Pick<MapScaleSnapshot, "scale">
+  scale: Pick<MapScaleSnapshot, "effectiveScale">
 ): MapWorldOffset {
   return {
     x: resolveWorldOffsetFromPixelDelta(delta.x ?? 0, scale),
@@ -180,7 +186,7 @@ export function resolveWorldOffsetDeltaFromPixels(
 
 export function resolveWorldOffsetDeltaFromWheel(
   delta: Partial<MapWorldOffset>,
-  scale: Pick<MapScaleSnapshot, "scale">
+  scale: Pick<MapScaleSnapshot, "effectiveScale">
 ): MapWorldOffset {
   const normalizedDelta = resolveWorldOffsetDeltaFromPixels(delta, scale);
 
@@ -197,11 +203,11 @@ export function resolveKeyboardPanDelta(
     | "right"
     | "up"
     | "down",
-  scale: Pick<MapScaleSnapshot, "scale">,
+  scale: Pick<MapScaleSnapshot, "effectiveScale">,
   baseStep = DEFAULT_KEYBOARD_PAN_STEP
 ): MapWorldOffset {
   const worldStep = Math.round(
-    sanitizePositiveNumber(baseStep, DEFAULT_KEYBOARD_PAN_STEP) / sanitizeScaleValue(scale.scale)
+    sanitizePositiveNumber(baseStep, DEFAULT_KEYBOARD_PAN_STEP) / sanitizeScaleValue(scale.effectiveScale)
   );
 
   switch (direction) {
@@ -234,9 +240,9 @@ export function resolveNextWorldOffset(
 
 export function resolveTileOriginFromWorldOffset(
   worldOffset: MapWorldOffset,
-  scale: Pick<MapScaleSnapshot, "scale">
+  scale: Pick<MapScaleSnapshot, "effectiveScale">
 ): MapTileOrigin {
-  const safeScale = sanitizeScaleValue(scale.scale);
+  const safeScale = sanitizeScaleValue(scale.effectiveScale);
 
   return {
     x: Math.round(sanitizeFiniteNumber(worldOffset.x) * safeScale),

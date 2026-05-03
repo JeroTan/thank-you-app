@@ -26,7 +26,7 @@ describe("Map Scale Utility", () => {
         width: 1000,
         height: 1000,
         devicePixelRatio: 1,
-        scale: 1,
+        effectiveScale: 1,
         normalizedWidth: 1,
         normalizedHeight: 1
       });
@@ -42,7 +42,7 @@ describe("Map Scale Utility", () => {
         width: 2000,
         height: 500,
         devicePixelRatio: 2,
-        scale: 0.5, // min(2, 0.5)
+        effectiveScale: 0.5, // min(2, 0.5)
         normalizedWidth: 2,
         normalizedHeight: 0.5
       });
@@ -54,7 +54,7 @@ describe("Map Scale Utility", () => {
         width: MAP_REFERENCE_VIEWPORT.width,
         height: MAP_REFERENCE_VIEWPORT.height,
         devicePixelRatio: 1,
-        scale: 1,
+        effectiveScale: 1,
         normalizedWidth: 1,
         normalizedHeight: 1
       });
@@ -88,17 +88,17 @@ describe("Map Scale Utility", () => {
 
   describe("resolveGrassTileDrawSize", () => {
     it("should calculate grass tile draw size based on scale (Happy Path)", () => {
-      const size = resolveGrassTileDrawSize({ scale: 1 } as any, 128);
+      const size = resolveGrassTileDrawSize({ effectiveScale: 1 } as any, 128);
       expect(size).toBe(128);
     });
 
     it("should enforce a minimum tile size of 96 (Bad Path / Edge Case)", () => {
-      const size = resolveGrassTileDrawSize({ scale: 0.1 } as any, 128); // 128 * 0.5 = 64, max(96, 64) = 96
+      const size = resolveGrassTileDrawSize({ effectiveScale: 0.1 } as any, 128); // 128 * 0.5 = 64, max(96, 64) = 96
       expect(size).toBe(96);
     });
 
     it("should fallback to DEFAULT_TILE_SIZE for invalid imageWidth (Bad Path / Edge Case)", () => {
-      const size = resolveGrassTileDrawSize({ scale: 1 } as any, -50); // falls back to 128 internally
+      const size = resolveGrassTileDrawSize({ effectiveScale: 1 } as any, -50); // falls back to 128 internally
       expect(size).toBe(128);
     });
   });
@@ -119,23 +119,23 @@ describe("Map Scale Utility", () => {
 
   describe("panning helpers", () => {
     it("should convert pixel drag delta into world offset delta using scale (Happy Path)", () => {
-      expect(resolveWorldOffsetFromPixelDelta(10, { scale: 0.5 })).toBe(20);
-      expect(resolveWorldOffsetDeltaFromPixels({ x: 12, y: -8 }, { scale: 0.5 })).toEqual({
+      expect(resolveWorldOffsetFromPixelDelta(10, { effectiveScale: 0.5 })).toBe(20);
+      expect(resolveWorldOffsetDeltaFromPixels({ x: 12, y: -8 }, { effectiveScale: 0.5 })).toEqual({
         x: 24,
         y: -16
       });
     });
 
     it("should invert wheel deltas for trackpad pan behavior (Happy Path)", () => {
-      expect(resolveWorldOffsetDeltaFromWheel({ x: 12, y: -8 }, { scale: 1 })).toEqual({
+      expect(resolveWorldOffsetDeltaFromWheel({ x: 12, y: -8 }, { effectiveScale: 1 })).toEqual({
         x: -12,
         y: 8
       });
     });
 
     it("should return scaled keyboard deltas for arrow pan (Happy Path)", () => {
-      expect(resolveKeyboardPanDelta("right", { scale: 0.5 })).toEqual({ x: 96, y: 0 });
-      expect(resolveKeyboardPanDelta("up", { scale: 1 })).toEqual({ x: 0, y: -48 });
+      expect(resolveKeyboardPanDelta("right", { effectiveScale: 0.5 })).toEqual({ x: 96, y: 0 });
+      expect(resolveKeyboardPanDelta("up", { effectiveScale: 1 })).toEqual({ x: 0, y: -48 });
     });
 
     it("should clamp world offsets when bounds exist (Edge Case)", () => {
@@ -152,7 +152,7 @@ describe("Map Scale Utility", () => {
     });
 
     it("should derive tile origin from the normalized world offset (Happy Path)", () => {
-      expect(resolveTileOriginFromWorldOffset({ x: 20, y: -10 }, { scale: 0.5 })).toEqual({
+      expect(resolveTileOriginFromWorldOffset({ x: 20, y: -10 }, { effectiveScale: 0.5 })).toEqual({
         x: 10,
         y: -5
       });
