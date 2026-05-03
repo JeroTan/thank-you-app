@@ -1,0 +1,3 @@
+# Feasibility
+
+This is an MVP version focusing on a flawless, zero-error frontend technical implementation. The scope is well-defined and constrained to a single highly interactive infinite canvas, rendering mocked `.ts` data. This is highly feasible for a small team. Given it is deployed on Cloudflare Workers and relies heavily on client-side rendering with Anime.js and SVG, the primary feasibility constraint will be performance optimization and browser rendering limits when handling a large number of nodes and physics calculations.

@@ -1,0 +1,66 @@
+/product-requirements 
+
+I want you to make an MVP for my thank you app
+It will be deployed in Cloudflare worker
+the stack is Astro JS with reactjs tailwindcss all of it are latest
+with Anime.js for animation
+
+Now I will need you to show a visualization ui animated map simple as reading this sample data (for now for this MVP)
+This is example but I will put it into something *.json on the asset folder that a library that I will make that has timer to simulate something like api call but for now we will only get its content on a json
+the format of json is super simple
+Actually I think again maybe just .ts so that I can do this
+[
+ {
+id: 1
+ full_name: "Jonathan",
+ thank_you_id_from: [
+ 2,
+3,
+4,
+],
+picture: null as null|string, .// yes can be null for people who don't like picture
+frame_color: #554433,
+},
+{
+id: 2
+ full_name: "Karina",
+ thank_you_id_from: [
+ 1,
+1,
+1, //Meaning he receive thank from Jonathan more than 1 times
+],
+picture: env.APP_URL+IdOfPicture // env from import {env} from "cloudflare:workers";
+},
+frame_color: #A54B33,
+{
+	id: 3,
+	full_name: "Juliet",
+
+	thank_you_id_from: [1],
+picture: null,
+frame_color: #C5C4C3,
+},
+{
+id: 4,
+full_name: "Agnes",
+thank_you_id_from: [3,1],
+picture: env.APP_URL+IdOfPicture
+}
+frame_color: #511413,
+]
+
+Now using that to create a map of markers like it is a map connected with lines like polyline in zoomable area that captures full width and height of the screen. 
+
+So we have 4 markers. The markers are component. They get the graphics of marker through a Marker.ts component which contains svg of a circle and a triangle that creates a marker. the circle is where the picture lives of a person in case of no picture it is just the first letter of their name. Also it will receive the frame_color to colorize the pin color. Also the have names container below. that if the name overflows the total width of the marker it will become ...
+
+Now the pin will have connections to the people (1 line of connection regardless if it repeats(for now on our MVP)) for example number 2 has connection to 1 multiple time it will only connect one time. Now the color of polyline is the same as frame_color as well. But here is a twist if 2 markers are full duplex meaning two are interconnected then it will have gradients with 2 different colors.
+
+Now the marker will be place randomly on the map or the canvas. the distance should be randomize but not close to each other. And now also the size of markers on the 2 factors, size of the empty space in the canvas, how many thankyous he get. now this is calculated before even the render using the hitbox and canvas total area and number of total markers 
+so basically we need to do math my thinking is get the total area of viewport first then use size of marker times total markers. using difference by viewport and total size of all markers we get its difference value. and that is the empty space. now that is the time we will allocate the size of each markers depending on howmany thank you they receive. now applying the distribution formula to allocate appropriate scale that is the time we will have the scale point of the markiers. But then I realize something that maybe it is okay let the viewport in freewill meaning it will always have a 50% padding equals to the total viewport size time predefined area space. so our first formula will be invalidated as we will now move into free map meaning once we pan to the right it will go back to the start of the left. so that even in mobile they can see it. the only thing the viewport will take into account is the global zoom to match the desktop view and mobile view. 
+
+Now that we laid out the marker we should make a background as well like a sprite land color green that is repeatetable also when pan. Just for aesthetics.
+
+Now markers has polyline but then let's call it string? Why because we will apply physics to string? ANd why? because after the first render. User might move the pin by dragging does the string will kinda like having a phsysic of something like osilating or i think the right word is swinging. as it moves. 
+
+Now a marker can be also clickable if not drag. when click it will show a highleted version of marker and string having glow on its edge While also graying out a bit other markers and their string.
+
