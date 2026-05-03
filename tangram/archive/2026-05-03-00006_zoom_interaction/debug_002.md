@@ -9,11 +9,11 @@ The user reported that while the map panned and zoomed correctly, the markers re
 
 ## Fixing Checklist
 
-- [ ] task 1 - Update `resolveMarkerBaseWidth` to support scaling
+- [x] task 1 - Update `resolveMarkerBaseWidth` to support scaling
   > **Summary:** Modify `src/features/map/utils/markerSize.ts` to accept `effectiveScale` in its input type. Update the calculation to multiply the base ratio result by the `effectiveScale` so markers grow/shrink with the map.
 
-- [ ] task 2 - Sync call sites in `markerSize.ts` and `markerSceneBuilder.ts`
+- [x] task 2 - Sync call sites in `markerSize.ts` and `markerSceneBuilder.ts`
   > **Summary:** Ensure `resolveMarkerCanvasSize` and any other internal helpers pass the `effectiveScale` from the `scaleSnapshot`.
 
-- [ ] task 3 - Update Unit Tests
+- [x] task 3 - Update Unit Tests
   > **Summary:** Update `src/test/utils/map/markerRendering.test.ts` to verify that changing `effectiveScale` results in a corresponding change in marker dimensions.

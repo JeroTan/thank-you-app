@@ -16,19 +16,27 @@ describe("Marker Rendering Utilities", () => {
   describe("resolveMarkerBaseWidth", () => {
     it("should resolve a base width of 50 for the 1000x1000 reference viewport (Happy Path)", () => {
       expect(resolveMarkerBaseWidthAtReference()).toBe(50);
-      expect(resolveMarkerBaseWidth({ width: 1000, height: 1000 } as any)).toBe(50);
+      expect(resolveMarkerBaseWidth({ width: 1000, height: 1000, effectiveScale: 1 } as any)).toBe(50);
     });
 
     it("should use the smaller viewport dimension for the base width rule (Happy Path)", () => {
-      expect(resolveMarkerBaseWidth({ width: 1200, height: 800 } as any)).toBe(40);
+      expect(resolveMarkerBaseWidth({ width: 1200, height: 800, effectiveScale: 1 } as any)).toBe(40);
     });
 
-    it("should derive marker canvas size from the viewport rule (Happy Path)", () => {
-      const markerSize = resolveMarkerCanvasSize({ width: 1000, height: 1000 } as any);
+    it("should scale the base width when effectiveScale is not 1 (Happy Path)", () => {
+      expect(resolveMarkerBaseWidth({ width: 1000, height: 1000, effectiveScale: 2 } as any)).toBe(100);
+      expect(resolveMarkerBaseWidth({ width: 1000, height: 1000, effectiveScale: 0.5 } as any)).toBe(25);
+    });
+
+    it("should derive marker canvas size from the viewport rule and scale (Happy Path)", () => {
+      const markerSize = resolveMarkerCanvasSize({ width: 1000, height: 1000, effectiveScale: 1 } as any);
 
       expect(markerSize.width).toBe(50);
       expect(markerSize.height).toBe(63);
       expect(markerSize.totalHeight).toBeGreaterThan(markerSize.height);
+
+      const scaledSize = resolveMarkerCanvasSize({ width: 1000, height: 1000, effectiveScale: 2 } as any);
+      expect(scaledSize.width).toBe(100);
     });
   });
 

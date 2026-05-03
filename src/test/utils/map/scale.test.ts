@@ -26,6 +26,8 @@ describe("Map Scale Utility", () => {
         width: 1000,
         height: 1000,
         devicePixelRatio: 1,
+        userZoom: 1,
+        scale: 1,
         effectiveScale: 1,
         normalizedWidth: 1,
         normalizedHeight: 1
@@ -42,7 +44,9 @@ describe("Map Scale Utility", () => {
         width: 2000,
         height: 500,
         devicePixelRatio: 2,
-        effectiveScale: 0.5, // min(2, 0.5)
+        userZoom: 1,
+        scale: 0.5, // min(2, 0.5)
+        effectiveScale: 0.5,
         normalizedWidth: 2,
         normalizedHeight: 0.5
       });
@@ -54,6 +58,8 @@ describe("Map Scale Utility", () => {
         width: MAP_REFERENCE_VIEWPORT.width,
         height: MAP_REFERENCE_VIEWPORT.height,
         devicePixelRatio: 1,
+        userZoom: 1,
+        scale: 1,
         effectiveScale: 1,
         normalizedWidth: 1,
         normalizedHeight: 1

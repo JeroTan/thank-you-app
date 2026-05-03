@@ -17,20 +17,24 @@ export type MarkerCanvasSize = {
 };
 
 export function resolveMarkerBaseWidth(
-  viewport: Pick<MapScaleSnapshot, "width" | "height">
+  viewport: Pick<MapScaleSnapshot, "width" | "height" | "effectiveScale">
 ): number {
   return Math.max(
     1,
-    Math.round(Math.min(viewport.width, viewport.height) * MARKER_BASE_VIEWPORT_RATIO)
+    Math.round(
+      Math.min(viewport.width, viewport.height) *
+        MARKER_BASE_VIEWPORT_RATIO *
+        viewport.effectiveScale
+    )
   );
 }
 
 export function resolveMarkerBaseWidthAtReference(): number {
-  return resolveMarkerBaseWidth(MAP_REFERENCE_VIEWPORT);
+  return resolveMarkerBaseWidth({ ...MAP_REFERENCE_VIEWPORT, effectiveScale: 1 });
 }
 
 export function resolveMarkerCanvasSize(
-  viewport: Pick<MapScaleSnapshot, "width" | "height">
+  viewport: Pick<MapScaleSnapshot, "width" | "height" | "effectiveScale">
 ): MarkerCanvasSize {
   const width = resolveMarkerBaseWidth(viewport);
   const height = Math.round((width * MARKER_VIEWBOX.height) / MARKER_VIEWBOX.width);

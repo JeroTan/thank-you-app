@@ -13,3 +13,11 @@ Introduces a user-controlled zoom multiplier that affects the global `scaleSnaps
 
 ## Debug Fixes
 - **Debug 001**: Fixed a regression where the map grass tile disappeared after zooming. The `resolveGrassTileDrawSize` function in `src/utils/map/scale.ts` was updated to require `effectiveScale`, but `GrassSceneBuilder` was still passing `{ scale: globalScale }`. Updated `GrassSceneBuilder` to pass `{ effectiveScale: globalScale }` to correctly compute the tile size.
+- **Debug 002**: Fixed an issue where map markers did not change size when zooming. Updated `resolveMarkerBaseWidth` in `markerSize.ts` to include the `effectiveScale` multiplier, ensuring markers scale proportionally with the map. Updated unit tests to verify the scaling behavior.
+
+## Final Execution Log
+- **What was Built**: Implemented user-controlled zoom functionality (0.25x to 4.0x) supporting mouse wheel, keyboard, and pinch gestures. Updated the scaling math to use an `effectiveScale` (combining viewport scale and user zoom) across background and marker layers.
+- **Challenges & Fixes**: 
+  - `debug_001.md`: Fixed a regression where the grass tile disappeared due to `GrassSceneBuilder` using the old `scale` property instead of the new `effectiveScale`.
+  - `debug_002.md`: Fixed markers not scaling by adding the `effectiveScale` multiplier to the marker size resolution logic and updating unit tests.
+- **Design Adherence**: Followed the Project Constitution by centralizing state in `src/store/` and keeping math separate in `src/utils/`. Adhered to the UI Pillar with a floating `ZoomControls` panel.
