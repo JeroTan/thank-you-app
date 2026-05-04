@@ -8,6 +8,8 @@ import {
   mapScaleStore,
   mapTileOriginStore,
   setActiveMapMarker,
+  setHoveredMapMarker,
+  setMapMarkerPanel,
   setMapMarkerDragSession,
   setMapPanInteractionState,
   updateMapMarkerDragSession,
@@ -106,6 +108,7 @@ export function useMarkerInteraction(markerCanvasRef: RefObject<HTMLCanvasElemen
       );
 
       if (!hitbox) {
+        setHoveredMapMarker(null);
         return;
       }
 
@@ -115,6 +118,7 @@ export function useMarkerInteraction(markerCanvasRef: RefObject<HTMLCanvasElemen
         return;
       }
 
+      setHoveredMapMarker(markerSpec.id);
       event.preventDefault();
       event.stopPropagation();
 
@@ -144,7 +148,20 @@ export function useMarkerInteraction(markerCanvasRef: RefObject<HTMLCanvasElemen
     const handlePointerMove = (event: PointerEvent) => {
       const dragSession = mapMarkerDragSessionStore.get();
 
-      if (!dragSession || dragSession.pointerId !== event.pointerId) {
+      if (!dragSession) {
+        const hitbox = hitTestMarker(
+          resolveCanvasPoint(event),
+          mapMarkerRenderSpecStore.get(),
+          mapScaleStore.get(),
+          mapTileOriginStore.get(),
+          mapMarkerWorldSizeStore.get()
+        );
+
+        setHoveredMapMarker(hitbox?.markerId ?? null);
+        return;
+      }
+
+      if (dragSession.pointerId !== event.pointerId) {
         return;
       }
 
@@ -201,6 +218,7 @@ export function useMarkerInteraction(markerCanvasRef: RefObject<HTMLCanvasElemen
         flushQueuedMarkerPosition();
       } else if (shouldAllowClick) {
         setActiveMapMarker(dragSession.markerId);
+        setMapMarkerPanel(dragSession.markerId);
       }
 
       clearMapMarkerDragSession();
@@ -220,10 +238,19 @@ export function useMarkerInteraction(markerCanvasRef: RefObject<HTMLCanvasElemen
       finishPointerSession(event, false);
     };
 
+    const handlePointerLeave = () => {
+      if (mapMarkerDragSessionStore.get()) {
+        return;
+      }
+
+      setHoveredMapMarker(null);
+    };
+
     markerCanvas.addEventListener("pointerdown", handlePointerDown);
     markerCanvas.addEventListener("pointermove", handlePointerMove);
     markerCanvas.addEventListener("pointerup", handlePointerUp);
     markerCanvas.addEventListener("pointercancel", handlePointerCancel);
+    markerCanvas.addEventListener("pointerleave", handlePointerLeave);
     markerCanvas.addEventListener("lostpointercapture", handlePointerCancel);
 
     return () => {
@@ -232,6 +259,7 @@ export function useMarkerInteraction(markerCanvasRef: RefObject<HTMLCanvasElemen
       markerCanvas.removeEventListener("pointermove", handlePointerMove);
       markerCanvas.removeEventListener("pointerup", handlePointerUp);
       markerCanvas.removeEventListener("pointercancel", handlePointerCancel);
+      markerCanvas.removeEventListener("pointerleave", handlePointerLeave);
       markerCanvas.removeEventListener("lostpointercapture", handlePointerCancel);
     };
   }, [markerCanvasRef]);

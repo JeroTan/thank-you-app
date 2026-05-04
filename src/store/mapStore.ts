@@ -1,6 +1,11 @@
 import { atom, computed } from "nanostores";
 
+import type { MapMarkerConnectionSpec } from "@/features/map/utils/markerConnectionSpec";
 import type { MapMarkerRenderSpec, MarkerFeatureData } from "@/features/map/utils/markerRenderSpec";
+import type {
+  StringPhysicsSnapshot,
+  StringPhysicsSnapshotMap
+} from "@/features/map/utils/stringPhysics";
 import {
   createMapScaleSnapshot,
   clampWorldOffset,
@@ -26,6 +31,10 @@ export type MapMarkerDragSession = {
   hasExceededClickThreshold: boolean;
 };
 
+export type MapMarkerPanelState = {
+  markerId: number | null;
+};
+
 export const mapViewportStore = atom<MapViewport>({
   width: MAP_REFERENCE_VIEWPORT.width,
   height: MAP_REFERENCE_VIEWPORT.height,
@@ -42,11 +51,16 @@ export const mapScaleStore = computed([mapViewportStore, mapZoomStore], (viewpor
 export const mapAssetStatusStore = atom<MapAssetStatus>("idle");
 export const mapWorldOffsetStore = atom<MapWorldOffset>({ x: 0, y: 0 });
 export const mapMarkerRenderSpecStore = atom<MapMarkerRenderSpec[]>([]);
+export const mapMarkerConnectionSpecStore = atom<MapMarkerConnectionSpec[]>([]);
+export const mapStringPhysicsSnapshotStore = atom<StringPhysicsSnapshotMap>({});
 export const mapMarkerWorldSizeStore = atom<{ width: number; height: number }>({
   width: MAP_REFERENCE_VIEWPORT.width * 2,
   height: MAP_REFERENCE_VIEWPORT.height * 2
 });
 export const mapActiveMarkerIdStore = atom<number | null>(null);
+export const mapHoveredMarkerIdStore = atom<number | null>(null);
+export const mapPinnedMarkerIdsStore = atom<number[]>([]);
+export const mapMarkerPanelStore = atom<MapMarkerPanelState>({ markerId: null });
 export const mapMarkerDragSessionStore = atom<MapMarkerDragSession | null>(null);
 export const mapPanInteractionStore = atom<MapPanInteractionState>({
   isActive: false,
@@ -83,8 +97,41 @@ export function initializeMapMarkers(markerFeatureData: MarkerFeatureData): void
   mapMarkerDragSessionStore.set(null);
 }
 
+export function initializeMapMarkerConnections(
+  markerConnectionSpecs: MapMarkerConnectionSpec[]
+): void {
+  mapMarkerConnectionSpecStore.set(markerConnectionSpecs);
+  mapStringPhysicsSnapshotStore.set({});
+  mapHoveredMarkerIdStore.set(null);
+  mapPinnedMarkerIdsStore.set([]);
+  mapMarkerPanelStore.set({ markerId: null });
+}
+
 export function setActiveMapMarker(markerId: number | null): void {
   mapActiveMarkerIdStore.set(markerId);
+}
+
+export function setHoveredMapMarker(markerId: number | null): void {
+  mapHoveredMarkerIdStore.set(markerId);
+}
+
+export function setMapMarkerPanel(markerId: number | null): void {
+  mapMarkerPanelStore.set({ markerId });
+}
+
+export function togglePinnedMapMarker(markerId: number): void {
+  const pinnedMarkerIds = mapPinnedMarkerIdsStore.get();
+
+  if (pinnedMarkerIds.includes(markerId)) {
+    mapPinnedMarkerIdsStore.set(
+      pinnedMarkerIds.filter((pinnedMarkerId) => pinnedMarkerId !== markerId)
+    );
+    return;
+  }
+
+  mapPinnedMarkerIdsStore.set(
+    [...pinnedMarkerIds, markerId].sort((firstId, secondId) => firstId - secondId)
+  );
 }
 
 export function updateMapMarkerWorldPosition(
@@ -124,6 +171,12 @@ export function updateMapMarkerDragSession(
 
 export function clearMapMarkerDragSession(): void {
   mapMarkerDragSessionStore.set(null);
+}
+
+export function setMapStringPhysicsSnapshots(
+  snapshots: Record<string, StringPhysicsSnapshot>
+): void {
+  mapStringPhysicsSnapshotStore.set(snapshots);
 }
 
 export function setMapWorldOffset(worldOffset: MapWorldOffset): void {

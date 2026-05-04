@@ -36,6 +36,7 @@ type MarkerSceneState = {
   worldSize?: { width: number; height: number };
   markerImageRegistry: Record<string, HTMLImageElement>;
   activeMarkerId: number | null;
+  hoveredMarkerId: number | null;
 };
 
 class MarkerCanvasScene {
@@ -80,6 +81,7 @@ class MarkerCanvasScene {
     const topY = viewportPos.y - height * 0.15;
     const hasActiveMarker = this.state.activeMarkerId !== null;
     const isActive = this.state.activeMarkerId === spec.id;
+    const isHovered = this.state.hoveredMarkerId === spec.id;
 
     context.save();
 
@@ -87,7 +89,7 @@ class MarkerCanvasScene {
       context.globalAlpha = 0.42;
     }
 
-    this.drawMarkerFrame(context, centerX, topY, width, spec.frameColor, isActive);
+    this.drawMarkerFrame(context, centerX, topY, width, spec.frameColor, isActive, isHovered);
     this.drawMarkerAvatar(
       context,
       centerX,
@@ -114,22 +116,28 @@ class MarkerCanvasScene {
     topY: number,
     width: number,
     frameColor: number,
-    isActive: boolean
+    isActive: boolean,
+    isHovered: boolean
   ): void {
     const scale = width / MARKER_VIEWBOX.width;
     const xOffset = centerX - (MARKER_VIEWBOX.width * scale) / 2;
+    const isHighlighted = isActive || isHovered;
 
     const pinPath = new Path2D(
       "M193.5 4C297.606 4 382 88.3943 382 192.5C382 272.322 332.385 340.557 262.312 368.046L202.732 474.43C201.522 476.091 199.914 477.448 198.045 478.384C196.177 479.321 194.102 479.81 191.996 479.81C189.89 479.81 187.815 479.321 185.947 478.384C184.078 477.448 182.47 476.091 181.26 474.43L124.683 368.043C54.6123 340.553 5 272.32 5 192.5C5 88.3943 89.3943 4 193.5 4Z"
     );
 
     context.save();
-    context.shadowColor = isActive ? toHexColorString(frameColor) : "rgba(0, 0, 0, 0.12)";
-    context.shadowBlur = isActive ? Math.max(16, Math.round(width * 0.22)) : 8;
+    context.shadowColor = isHighlighted ? toHexColorString(frameColor) : "rgba(0, 0, 0, 0.12)";
+    context.shadowBlur = isHovered
+      ? Math.max(22, Math.round(width * 0.3))
+      : isActive
+        ? Math.max(16, Math.round(width * 0.22))
+        : 8;
     context.shadowOffsetY = 1;
     context.fillStyle = toHexColorString(frameColor);
-    context.strokeStyle = isActive ? "rgba(248, 247, 242, 0.95)" : "rgba(0, 0, 0, 0.18)";
-    context.lineWidth = isActive ? Math.max(3, Math.round(width * 0.06)) : 1;
+    context.strokeStyle = isHighlighted ? "rgba(248, 247, 242, 0.95)" : "rgba(0, 0, 0, 0.18)";
+    context.lineWidth = isHighlighted ? Math.max(3, Math.round(width * 0.06)) : 1;
     context.translate(xOffset, topY);
     context.scale(scale, scale);
     context.fill(pinPath);
@@ -261,6 +269,7 @@ export class MarkerSceneBuilder {
   private worldSize?: { width: number; height: number };
   private markerImageRegistry: Record<string, HTMLImageElement> = {};
   private activeMarkerId: number | null = null;
+  private hoveredMarkerId: number | null = null;
 
   public attachCanvas(canvas: HTMLCanvasElement): this {
     this.canvas = canvas;
@@ -312,6 +321,12 @@ export class MarkerSceneBuilder {
     return this;
   }
 
+  public withHoveredMarkerId(hoveredMarkerId: number | null): this {
+    this.hoveredMarkerId = hoveredMarkerId;
+
+    return this;
+  }
+
   public build(): MarkerCanvasScene {
     if (!this.canvas) {
       throw new Error("MarkerSceneBuilder requires a canvas before build().");
@@ -349,7 +364,8 @@ export class MarkerSceneBuilder {
       tileOrigin: this.tileOrigin,
       worldSize: this.worldSize,
       markerImageRegistry: this.markerImageRegistry,
-      activeMarkerId: this.activeMarkerId
+      activeMarkerId: this.activeMarkerId,
+      hoveredMarkerId: this.hoveredMarkerId
     });
   }
 }

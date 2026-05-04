@@ -9,6 +9,12 @@ import {
 
 import { PanInteractionBuilder } from "../utils/panInteractionBuilder";
 
+function isMapOverlayControlTarget(event: PointerEvent): boolean {
+  const target = event.target;
+
+  return target instanceof HTMLElement && target.closest("[data-map-overlay-control]") !== null;
+}
+
 export function usePanInteraction(surfaceRef: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const surfaceElement = surfaceRef.current;
@@ -26,7 +32,9 @@ export function usePanInteraction(surfaceRef: RefObject<HTMLElement | null>): vo
       .withInteractionState((state) => {
         setMapPanInteractionState(state);
       })
-      .withShouldStartPan(() => mapMarkerDragSessionStore.get() === null)
+      .withShouldStartPan(
+        (event) => mapMarkerDragSessionStore.get() === null && !isMapOverlayControlTarget(event)
+      )
       .withKeyboardStep(48)
       .withPreventDefaults(true)
       .build();

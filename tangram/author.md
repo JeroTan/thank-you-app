@@ -2,5 +2,5 @@
 
 - Last planner: Codex
 - Planning date: 2026-05-04
-- Active feature: 00007_interactive_marker_drag_sizing
-- Active directives: Count duplicate thank-you IDs, scale markers by received thank-you count, expand the map world before compressing marker sizes, make marker drag take priority over map pan, and keep drag/click behavior session-local in shared map state.
+- Active feature: 00008_swinging_marker_strings
+- Active directives: Draw one visible soft rope string per unique marker pair from `thank_you_id_from`, collapse duplicate sender IDs and reciprocal A-B/B-A thanks into one visible string while preserving count and mutual metadata, make strings swing with fixed-rest-length physics during marker drag, support pinned markers that stay steady while connected markers respond, and glow the hovered marker plus its connected strings.
