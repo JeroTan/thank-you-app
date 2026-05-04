@@ -11,6 +11,7 @@ import {
 type ScaleSource = () => Pick<MapScaleSnapshot, "effectiveScale">;
 type WorldOffsetDeltaHandler = (delta: MapWorldOffset) => void;
 type PanInteractionStateHandler = (state: Partial<MapPanInteractionState>) => void;
+type ShouldStartPanHandler = (event: PointerEvent) => boolean;
 
 type PointerSession = {
   pointerId: number;
@@ -32,6 +33,7 @@ type PanInteractionOptions = {
   getScale: ScaleSource;
   onWorldOffsetDelta: WorldOffsetDeltaHandler;
   onInteractionStateChange: PanInteractionStateHandler;
+  shouldStartPan: ShouldStartPanHandler;
 };
 
 function isKeyboardDirection(
@@ -94,7 +96,12 @@ class BuiltPanInteractionController implements PanInteractionController {
   private readonly handlePointerDown = (event: PointerEvent) => {
     const inputMode = this.resolvePointerInputMode(event.pointerType);
 
-    if (!inputMode || this.pointerSession || (inputMode === "mouse" && event.button !== 0)) {
+    if (
+      !inputMode ||
+      this.pointerSession ||
+      (inputMode === "mouse" && event.button !== 0) ||
+      !this.options.shouldStartPan(event)
+    ) {
       return;
     }
 
@@ -322,6 +329,7 @@ export class PanInteractionBuilder {
   private onInteractionStateChange: PanInteractionStateHandler = () => undefined;
   private onWorldOffsetDelta: WorldOffsetDeltaHandler = () => undefined;
   private preventDefaults = true;
+  private shouldStartPan: ShouldStartPanHandler = () => true;
 
   public attachElement(element: HTMLElement): this {
     this.element = element;
@@ -369,6 +377,12 @@ export class PanInteractionBuilder {
     return this;
   }
 
+  public withShouldStartPan(handler: ShouldStartPanHandler): this {
+    this.shouldStartPan = handler;
+
+    return this;
+  }
+
   public build(): PanInteractionController {
     if (!this.element) {
       throw new Error("PanInteractionBuilder requires an element before build().");
@@ -381,7 +395,8 @@ export class PanInteractionBuilder {
       preventDefaults: this.preventDefaults,
       getScale: this.getScale,
       onWorldOffsetDelta: this.onWorldOffsetDelta,
-      onInteractionStateChange: this.onInteractionStateChange
+      onInteractionStateChange: this.onInteractionStateChange,
+      shouldStartPan: this.shouldStartPan
     });
   }
 }

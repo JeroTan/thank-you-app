@@ -1,6 +1,11 @@
 import { useEffect, type RefObject } from "react";
 
-import { mapScaleStore, setMapPanInteractionState, updateMapWorldOffset } from "@/store/mapStore";
+import {
+  mapMarkerDragSessionStore,
+  mapScaleStore,
+  setMapPanInteractionState,
+  updateMapWorldOffset
+} from "@/store/mapStore";
 
 import { PanInteractionBuilder } from "../utils/panInteractionBuilder";
 
@@ -21,6 +26,7 @@ export function usePanInteraction(surfaceRef: RefObject<HTMLElement | null>): vo
       .withInteractionState((state) => {
         setMapPanInteractionState(state);
       })
+      .withShouldStartPan(() => mapMarkerDragSessionStore.get() === null)
       .withKeyboardStep(48)
       .withPreventDefaults(true)
       .build();

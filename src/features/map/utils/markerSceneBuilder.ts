@@ -4,7 +4,11 @@ import {
   type MapTileOrigin
 } from "@/utils/map/scale";
 import { invertColor, toHexColorString } from "@/utils/visual/color";
-import { resolveMarkerCanvasSize, MARKER_VIEWBOX } from "./markerSize";
+import {
+  MARKER_VIEWBOX,
+  resolveMarkerCanvasSizeForReferenceWidth,
+  type MarkerCanvasSize
+} from "./markerSize";
 import { resolveMarkerViewportPosition } from "./markerPositioning";
 
 const FULL_CIRCLE_RADIANS = Math.PI * 2;
@@ -18,6 +22,9 @@ export type CanvasMarkerSpec = {
   picture: string | null;
   worldX: number;
   worldY: number;
+  widthAtScaleOne: number;
+  thankYouCount: number;
+  sizeMultiplier: number;
 };
 
 type MarkerSceneState = {
@@ -28,6 +35,7 @@ type MarkerSceneState = {
   tileOrigin: MapTileOrigin;
   worldSize?: { width: number; height: number };
   markerImageRegistry: Record<string, HTMLImageElement>;
+  activeMarkerId: number | null;
 };
 
 class MarkerCanvasScene {
@@ -61,14 +69,25 @@ class MarkerCanvasScene {
       this.state.worldSize
     );
 
-    const markerSize = resolveMarkerCanvasSize(scaleSnapshot);
+    const markerSize = resolveMarkerCanvasSizeForReferenceWidth(
+      spec.widthAtScaleOne,
+      scaleSnapshot
+    );
     const width = markerSize.width;
     const height = markerSize.height;
 
     const centerX = viewportPos.x;
     const topY = viewportPos.y - height * 0.15;
+    const hasActiveMarker = this.state.activeMarkerId !== null;
+    const isActive = this.state.activeMarkerId === spec.id;
 
-    this.drawMarkerFrame(context, centerX, topY, width, spec.frameColor);
+    context.save();
+
+    if (hasActiveMarker && !isActive) {
+      context.globalAlpha = 0.42;
+    }
+
+    this.drawMarkerFrame(context, centerX, topY, width, spec.frameColor, isActive);
     this.drawMarkerAvatar(
       context,
       centerX,
@@ -85,6 +104,8 @@ class MarkerCanvasScene {
       markerSize,
       spec.label
     );
+
+    context.restore();
   }
 
   private drawMarkerFrame(
@@ -92,7 +113,8 @@ class MarkerCanvasScene {
     centerX: number,
     topY: number,
     width: number,
-    frameColor: number
+    frameColor: number,
+    isActive: boolean
   ): void {
     const scale = width / MARKER_VIEWBOX.width;
     const xOffset = centerX - (MARKER_VIEWBOX.width * scale) / 2;
@@ -102,12 +124,12 @@ class MarkerCanvasScene {
     );
 
     context.save();
-    context.shadowColor = "rgba(0, 0, 0, 0.12)";
-    context.shadowBlur = 8;
+    context.shadowColor = isActive ? toHexColorString(frameColor) : "rgba(0, 0, 0, 0.12)";
+    context.shadowBlur = isActive ? Math.max(16, Math.round(width * 0.22)) : 8;
     context.shadowOffsetY = 1;
     context.fillStyle = toHexColorString(frameColor);
-    context.strokeStyle = "rgba(0, 0, 0, 0.18)";
-    context.lineWidth = 1;
+    context.strokeStyle = isActive ? "rgba(248, 247, 242, 0.95)" : "rgba(0, 0, 0, 0.18)";
+    context.lineWidth = isActive ? Math.max(3, Math.round(width * 0.06)) : 1;
     context.translate(xOffset, topY);
     context.scale(scale, scale);
     context.fill(pinPath);
@@ -147,7 +169,10 @@ class MarkerCanvasScene {
 
       const imageAspect = image.width / image.height;
       const targetAspect = 1;
-      let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
+      let sx = 0,
+        sy = 0,
+        sWidth = image.width,
+        sHeight = image.height;
 
       if (imageAspect > targetAspect) {
         sWidth = image.height * targetAspect;
@@ -210,7 +235,7 @@ class MarkerCanvasScene {
     context: CanvasRenderingContext2D,
     centerX: number,
     y: number,
-    markerSize: ReturnType<typeof resolveMarkerCanvasSize>,
+    markerSize: MarkerCanvasSize,
     label: string
   ): void {
     const displayLabel = label.length > 18 ? `${label.substring(0, 17)}…` : label;
@@ -225,14 +250,6 @@ class MarkerCanvasScene {
     context.strokeText(displayLabel, centerX, y);
     context.fillText(displayLabel, centerX, y);
   }
-
-  private hexColorToString(hexColor: number): string {
-    const r = (hexColor >> 16) & 0xff;
-    const g = (hexColor >> 8) & 0xff;
-    const b = hexColor & 0xff;
-
-    return `rgb(${r},${g},${b})`;
-  }
 }
 
 export class MarkerSceneBuilder {
@@ -243,6 +260,7 @@ export class MarkerSceneBuilder {
   private tileOrigin: MapTileOrigin = { x: 0, y: 0 };
   private worldSize?: { width: number; height: number };
   private markerImageRegistry: Record<string, HTMLImageElement> = {};
+  private activeMarkerId: number | null = null;
 
   public attachCanvas(canvas: HTMLCanvasElement): this {
     this.canvas = canvas;
@@ -288,6 +306,12 @@ export class MarkerSceneBuilder {
     return this;
   }
 
+  public withActiveMarkerId(activeMarkerId: number | null): this {
+    this.activeMarkerId = activeMarkerId;
+
+    return this;
+  }
+
   public build(): MarkerCanvasScene {
     if (!this.canvas) {
       throw new Error("MarkerSceneBuilder requires a canvas before build().");
@@ -324,7 +348,8 @@ export class MarkerSceneBuilder {
       pixelRatio: this.pixelRatio,
       tileOrigin: this.tileOrigin,
       worldSize: this.worldSize,
-      markerImageRegistry: this.markerImageRegistry
+      markerImageRegistry: this.markerImageRegistry,
+      activeMarkerId: this.activeMarkerId
     });
   }
 }

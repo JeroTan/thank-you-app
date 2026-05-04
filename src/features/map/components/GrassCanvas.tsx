@@ -1,10 +1,14 @@
 import { useStore } from "@nanostores/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import grassSquareTile from "@/assets/sprite/grass_square_tile.png";
 import { thankYouData } from "@/components/mockdata/thankYouData";
 import {
+  initializeMapMarkers,
+  mapActiveMarkerIdStore,
   mapAssetStatusStore,
+  mapMarkerRenderSpecStore,
+  mapMarkerWorldSizeStore,
   mapPanInteractionStore,
   mapScaleStore,
   mapTileOriginStore,
@@ -12,6 +16,7 @@ import {
 } from "@/store/mapStore";
 
 import { useCanvasResize } from "../hooks/useCanvasResize";
+import { useMarkerInteraction } from "../hooks/useMarkerInteraction";
 import { usePanInteraction } from "../hooks/usePanInteraction";
 import { useZoomInteraction } from "../hooks/useZoomInteraction";
 import { loadCanvasImageAsset, loadCanvasImageAssets } from "../utils/assetLoader";
@@ -28,15 +33,28 @@ export function GrassCanvas() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const markerCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  useMarkerInteraction(markerCanvasRef);
+
+  const initialMarkerFeatureData = useMemo(
+    () => createMarkerRenderSpecs(thankYouData, { seed: 42 }),
+    []
+  );
   const [tileImage, setTileImage] = useState<HTMLImageElement | null>(null);
   const [markerImageRegistry, setMarkerImageRegistry] = useState<Record<string, HTMLImageElement>>(
     {}
   );
+  const activeMarkerId = useStore(mapActiveMarkerIdStore);
   const assetStatus = useStore(mapAssetStatusStore);
+  const markerRenderSpecs = useStore(mapMarkerRenderSpecStore);
+  const markerWorldSize = useStore(mapMarkerWorldSizeStore);
   const panInteraction = useStore(mapPanInteractionStore);
   const scaleSnapshot = useStore(mapScaleStore);
   const tileOrigin = useStore(mapTileOriginStore);
   const isReady = assetStatus === "ready";
+
+  useEffect(() => {
+    initializeMapMarkers(initialMarkerFeatureData);
+  }, [initialMarkerFeatureData]);
 
   useEffect(() => {
     let isActive = true;
@@ -119,16 +137,17 @@ export function GrassCanvas() {
       return;
     }
 
-    const { specs, worldSize } = createMarkerRenderSpecs(thankYouData, { seed: 42 });
-
-    const specsForCanvas = specs.map((spec) => ({
+    const specsForCanvas = markerRenderSpecs.map((spec) => ({
       id: spec.id,
       frameColor: spec.frameColor,
       label: spec.label,
       fallbackInitial: spec.fallbackInitial,
       picture: spec.pictureSource,
       worldX: spec.worldPosition.x,
-      worldY: spec.worldPosition.y
+      worldY: spec.worldPosition.y,
+      widthAtScaleOne: spec.widthAtScaleOne,
+      thankYouCount: spec.thankYouCount,
+      sizeMultiplier: spec.sizeMultiplier
     }));
 
     new MarkerSceneBuilder()
@@ -136,12 +155,21 @@ export function GrassCanvas() {
       .withScaleSnapshot(scaleSnapshot)
       .withPixelRatio(scaleSnapshot.devicePixelRatio)
       .withTileOrigin(tileOrigin)
-      .withWorldSize(worldSize)
+      .withWorldSize(markerWorldSize)
       .withMarkerImageRegistry(markerImageRegistry)
+      .withActiveMarkerId(activeMarkerId)
       .withMarkerSpecs(specsForCanvas)
       .build()
       .draw();
-  }, [assetStatus, scaleSnapshot, tileOrigin, markerImageRegistry]);
+  }, [
+    activeMarkerId,
+    assetStatus,
+    markerImageRegistry,
+    markerRenderSpecs,
+    markerWorldSize,
+    scaleSnapshot,
+    tileOrigin
+  ]);
 
   const statusTitle = assetStatus === "error" ? "Map background unavailable" : "Loading map assets";
   const statusCopy =
