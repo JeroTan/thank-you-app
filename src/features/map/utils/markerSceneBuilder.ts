@@ -37,6 +37,7 @@ type MarkerSceneState = {
   markerImageRegistry: Record<string, HTMLImageElement>;
   activeMarkerId: number | null;
   hoveredMarkerId: number | null;
+  reducedMotion: boolean;
 };
 
 class MarkerCanvasScene {
@@ -89,7 +90,16 @@ class MarkerCanvasScene {
       context.globalAlpha = 0.42;
     }
 
-    this.drawMarkerFrame(context, centerX, topY, width, spec.frameColor, isActive, isHovered);
+    this.drawMarkerFrame(
+      context,
+      centerX,
+      topY,
+      width,
+      spec.frameColor,
+      isActive,
+      isHovered,
+      this.state.reducedMotion
+    );
     this.drawMarkerAvatar(
       context,
       centerX,
@@ -117,7 +127,8 @@ class MarkerCanvasScene {
     width: number,
     frameColor: number,
     isActive: boolean,
-    isHovered: boolean
+    isHovered: boolean,
+    reducedMotion: boolean
   ): void {
     const scale = width / MARKER_VIEWBOX.width;
     const xOffset = centerX - (MARKER_VIEWBOX.width * scale) / 2;
@@ -129,11 +140,15 @@ class MarkerCanvasScene {
 
     context.save();
     context.shadowColor = isHighlighted ? toHexColorString(frameColor) : "rgba(0, 0, 0, 0.12)";
-    context.shadowBlur = isHovered
-      ? Math.max(22, Math.round(width * 0.3))
-      : isActive
-        ? Math.max(16, Math.round(width * 0.22))
-        : 8;
+    context.shadowBlur = reducedMotion
+      ? isHighlighted
+        ? Math.max(10, Math.round(width * 0.14))
+        : 6
+      : isHovered
+        ? Math.max(22, Math.round(width * 0.3))
+        : isActive
+          ? Math.max(16, Math.round(width * 0.22))
+          : 8;
     context.shadowOffsetY = 1;
     context.fillStyle = toHexColorString(frameColor);
     context.strokeStyle = isHighlighted ? "rgba(248, 247, 242, 0.95)" : "rgba(0, 0, 0, 0.18)";
@@ -270,6 +285,7 @@ export class MarkerSceneBuilder {
   private markerImageRegistry: Record<string, HTMLImageElement> = {};
   private activeMarkerId: number | null = null;
   private hoveredMarkerId: number | null = null;
+  private reducedMotion = false;
 
   public attachCanvas(canvas: HTMLCanvasElement): this {
     this.canvas = canvas;
@@ -327,6 +343,12 @@ export class MarkerSceneBuilder {
     return this;
   }
 
+  public withReducedMotion(reducedMotion: boolean): this {
+    this.reducedMotion = reducedMotion;
+
+    return this;
+  }
+
   public build(): MarkerCanvasScene {
     if (!this.canvas) {
       throw new Error("MarkerSceneBuilder requires a canvas before build().");
@@ -365,7 +387,8 @@ export class MarkerSceneBuilder {
       worldSize: this.worldSize,
       markerImageRegistry: this.markerImageRegistry,
       activeMarkerId: this.activeMarkerId,
-      hoveredMarkerId: this.hoveredMarkerId
+      hoveredMarkerId: this.hoveredMarkerId,
+      reducedMotion: this.reducedMotion
     });
   }
 }

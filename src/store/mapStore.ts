@@ -6,6 +6,7 @@ import type {
   StringPhysicsSnapshot,
   StringPhysicsSnapshotMap
 } from "@/features/map/utils/stringPhysics";
+import type { WorldMapThemeMode } from "@/features/map/utils/worldMapGeometry";
 import {
   createMapScaleSnapshot,
   clampWorldOffset,
@@ -19,6 +20,12 @@ import {
 } from "@/utils/map/scale";
 
 export type MapAssetStatus = "idle" | "loading" | "ready" | "error";
+
+export type MapVisualPreferences = {
+  reducedMotion: boolean;
+  themeMode: WorldMapThemeMode;
+  searchQuery: string;
+};
 
 export type MapMarkerDragSession = {
   markerId: number;
@@ -49,6 +56,11 @@ export const mapScaleStore = computed([mapViewportStore, mapZoomStore], (viewpor
 );
 
 export const mapAssetStatusStore = atom<MapAssetStatus>("idle");
+export const mapVisualPreferencesStore = atom<MapVisualPreferences>({
+  reducedMotion: false,
+  themeMode: "atlas",
+  searchQuery: ""
+});
 export const mapWorldOffsetStore = atom<MapWorldOffset>({ x: 0, y: 0 });
 export const mapMarkerRenderSpecStore = atom<MapMarkerRenderSpec[]>([]);
 export const mapMarkerConnectionSpecStore = atom<MapMarkerConnectionSpec[]>([]);
@@ -84,6 +96,29 @@ export function setMapViewport(viewport: Partial<MapViewport>): void {
 
 export function setMapAssetStatus(status: MapAssetStatus): void {
   mapAssetStatusStore.set(status);
+}
+
+export function setMapReducedMotion(reducedMotion: boolean): void {
+  mapVisualPreferencesStore.set({
+    ...mapVisualPreferencesStore.get(),
+    reducedMotion
+  });
+}
+
+export function toggleMapThemeMode(): void {
+  const currentPreferences = mapVisualPreferencesStore.get();
+
+  mapVisualPreferencesStore.set({
+    ...currentPreferences,
+    themeMode: currentPreferences.themeMode === "atlas" ? "dusk" : "atlas"
+  });
+}
+
+export function setMapSearchQuery(searchQuery: string): void {
+  mapVisualPreferencesStore.set({
+    ...mapVisualPreferencesStore.get(),
+    searchQuery
+  });
 }
 
 export function setMapMarkerRenderSpecs(markerRenderSpecs: MapMarkerRenderSpec[]): void {

@@ -1,7 +1,6 @@
 import { useStore } from "@nanostores/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import grassSquareTile from "@/assets/sprite/grass_square_tile.png";
 import { thankYouData } from "@/components/mockdata/thankYouData";
 import {
   initializeMapMarkerConnections,
@@ -16,18 +15,22 @@ import {
   mapPanInteractionStore,
   mapScaleStore,
   mapTileOriginStore,
+  mapVisualPreferencesStore,
   setMapAssetStatus
 } from "@/store/mapStore";
 import type { MapWorldOffset } from "@/utils/map/scale";
 
+import { AccessibleMarkerList } from "./AccessibleMarkerList";
 import { useCanvasResize } from "../hooks/useCanvasResize";
 import { useMarkerInteraction } from "../hooks/useMarkerInteraction";
 import { usePanInteraction } from "../hooks/usePanInteraction";
+import { useReducedMotionPreference } from "../hooks/useReducedMotionPreference";
 import { useStringPhysics } from "../hooks/useStringPhysics";
 import { useZoomInteraction } from "../hooks/useZoomInteraction";
-import { loadCanvasImageAsset, loadCanvasImageAssets } from "../utils/assetLoader";
-import { GrassSceneBuilder } from "../utils/grassSceneBuilder";
-import { MarkerPinPanel } from "./MarkerPinPanel";
+import { loadCanvasImageAsset } from "../utils/assetLoader";
+import { MapHeaderOverlay } from "./MapHeaderOverlay";
+import { MapLegend } from "./MapLegend";
+import { MarkerDetailPanel } from "./MarkerDetailPanel";
 import { createMarkerConnectionSpecs } from "../utils/markerConnectionSpec";
 import { MarkerSceneBuilder } from "../utils/markerSceneBuilder";
 import type { MapMarkerRenderSpec } from "../utils/markerRenderSpec";
@@ -35,6 +38,7 @@ import { createMarkerRenderSpecs } from "../utils/markerRenderSpec";
 import { resolveMarkerCanvasSizeForWidth } from "../utils/markerSize";
 import { createStringPhysicsSnapshot } from "../utils/stringPhysics";
 import { StringSceneBuilder } from "../utils/stringSceneBuilder";
+import { WorldMapSceneBuilder } from "../utils/worldMapSceneBuilder";
 import { ZoomControls } from "./ZoomControls";
 
 const MARKER_STRING_ANCHOR_Y_RATIO = 0.85;
@@ -73,6 +77,7 @@ function resolveStringCanvasPoints(
 
 export function GrassCanvas() {
   useCanvasResize();
+  useReducedMotionPreference();
   const surfaceRef = useRef<HTMLElement | null>(null);
   usePanInteraction(surfaceRef);
   useZoomInteraction(surfaceRef);
@@ -91,7 +96,6 @@ export function GrassCanvas() {
     () => createMarkerConnectionSpecs(thankYouData, initialMarkerFeatureData.specs),
     [initialMarkerFeatureData]
   );
-  const [tileImage, setTileImage] = useState<HTMLImageElement | null>(null);
   const [markerImageRegistry, setMarkerImageRegistry] = useState<Record<string, HTMLImageElement>>(
     {}
   );
@@ -105,6 +109,7 @@ export function GrassCanvas() {
   const panInteraction = useStore(mapPanInteractionStore);
   const scaleSnapshot = useStore(mapScaleStore);
   const tileOrigin = useStore(mapTileOriginStore);
+  const visualPreferences = useStore(mapVisualPreferencesStore);
   const isReady = assetStatus === "ready";
 
   useEffect(() => {
@@ -144,17 +149,8 @@ export function GrassCanvas() {
           results.filter((entry): entry is readonly [string, HTMLImageElement] => entry !== null)
         );
 
-        return loadCanvasImageAssets([{ key: "grassTile", src: grassSquareTile.src }]).then(
-          (assets) => {
-            if (!isActive) {
-              return;
-            }
-
-            setTileImage(assets.grassTile);
-            setMarkerImageRegistry(loadedMarkerImages);
-            setMapAssetStatus("ready");
-          }
-        );
+        setMarkerImageRegistry(loadedMarkerImages);
+        setMapAssetStatus("ready");
       })
       .catch((error: unknown) => {
         if (!isActive) {
@@ -171,21 +167,20 @@ export function GrassCanvas() {
   }, []);
 
   useEffect(() => {
-    if (!canvasRef.current || !tileImage || assetStatus !== "ready") {
+    if (!canvasRef.current || assetStatus !== "ready") {
       return;
     }
 
-    new GrassSceneBuilder()
+    new WorldMapSceneBuilder()
       .attachCanvas(canvasRef.current)
-      .withViewport(scaleSnapshot.width, scaleSnapshot.height)
+      .withScaleSnapshot(scaleSnapshot)
       .withPixelRatio(scaleSnapshot.devicePixelRatio)
-      .withGlobalScale(scaleSnapshot.effectiveScale)
-      .withTileImage(tileImage)
       .withTileOrigin(tileOrigin)
-      .withFallbackColor("#315723")
+      .withThemeMode(visualPreferences.themeMode)
+      .withReducedMotion(visualPreferences.reducedMotion)
       .build()
       .draw();
-  }, [assetStatus, scaleSnapshot, tileImage, tileOrigin]);
+  }, [assetStatus, scaleSnapshot, tileOrigin, visualPreferences]);
 
   useEffect(() => {
     if (!stringCanvasRef.current || assetStatus !== "ready") {
@@ -236,6 +231,7 @@ export function GrassCanvas() {
       .withTileOrigin(tileOrigin)
       .withWorldSize(markerWorldSize)
       .withStringSpecs(specsForCanvas)
+      .withReducedMotion(visualPreferences.reducedMotion)
       .build()
       .draw();
   }, [
@@ -247,7 +243,8 @@ export function GrassCanvas() {
     markerWorldSize,
     scaleSnapshot,
     stringPhysicsSnapshots,
-    tileOrigin
+    tileOrigin,
+    visualPreferences.reducedMotion
   ]);
 
   // Marker rendering effect
@@ -278,6 +275,7 @@ export function GrassCanvas() {
       .withMarkerImageRegistry(markerImageRegistry)
       .withActiveMarkerId(activeMarkerId)
       .withHoveredMarkerId(hoveredMarkerId)
+      .withReducedMotion(visualPreferences.reducedMotion)
       .withMarkerSpecs(specsForCanvas)
       .build()
       .draw();
@@ -289,14 +287,15 @@ export function GrassCanvas() {
     markerRenderSpecs,
     markerWorldSize,
     scaleSnapshot,
-    tileOrigin
+    tileOrigin,
+    visualPreferences.reducedMotion
   ]);
 
-  const statusTitle = assetStatus === "error" ? "Map background unavailable" : "Loading map assets";
+  const statusTitle = assetStatus === "error" ? "Map assets unavailable" : "Loading map assets";
   const statusCopy =
     assetStatus === "error"
-      ? "The grass tile could not be prepared, so the viewport remains on its fallback surface."
-      : "Preparing the grass tile and viewport scale before the map surface becomes visible.";
+      ? "Avatar assets could not be prepared, so the map will continue with fallback initials."
+      : "Preparing avatars and viewport scale before the map surface becomes visible.";
 
   return (
     <section
@@ -327,7 +326,10 @@ export function GrassCanvas() {
       />
 
       {isReady && <ZoomControls />}
-      {isReady && <MarkerPinPanel />}
+      {isReady && <MapHeaderOverlay />}
+      {isReady && <MapLegend />}
+      {isReady && <MarkerDetailPanel />}
+      {isReady && <AccessibleMarkerList />}
 
       {!isReady ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#315723]">

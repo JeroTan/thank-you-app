@@ -6,6 +6,7 @@ import {
   mapMarkerRenderSpecStore,
   mapPinnedMarkerIdsStore,
   mapStringPhysicsSnapshotStore,
+  mapVisualPreferencesStore,
   setMapStringPhysicsSnapshots,
   updateMapMarkerWorldPosition
 } from "@/store/mapStore";
@@ -57,9 +58,10 @@ export function useStringPhysics(): void {
       const dragSession = mapMarkerDragSessionStore.get();
       const pinnedMarkerIds = mapPinnedMarkerIdsStore.get();
       const currentSnapshots = mapStringPhysicsSnapshotStore.get();
+      const isReducedMotion = mapVisualPreferencesStore.get().reducedMotion;
       const nextSnapshots: StringPhysicsSnapshotMap = {};
       const markerDeltas = new Map<number, MapWorldOffset>();
-      let shouldContinue = dragSession !== null;
+      let shouldContinue = dragSession !== null && !isReducedMotion;
 
       if (connections.length === 0 || markerSpecs.length === 0) {
         if (Object.keys(currentSnapshots).length > 0) {
@@ -83,9 +85,11 @@ export function useStringPhysics(): void {
           dragSession !== null &&
           (dragSession.markerId === connection.markerAId ||
             dragSession.markerId === connection.markerBId);
-        const nextSnapshot = stepStringPhysicsSnapshot(existingSnapshot, anchors, {
-          active: isDragConnected
-        });
+        const nextSnapshot = isReducedMotion
+          ? createStringPhysicsSnapshot(connection, anchors, { segmentCount: 8 })
+          : stepStringPhysicsSnapshot(existingSnapshot, anchors, {
+              active: isDragConnected
+            });
 
         nextSnapshots[connection.key] = nextSnapshot;
 
@@ -93,15 +97,12 @@ export function useStringPhysics(): void {
           shouldContinue = true;
         }
 
-        const markerNudge = resolveRopeDrivenMarkerNudge(
-          connection,
-          anchors,
-          nextSnapshot.restLength,
-          {
-            draggedMarkerId: dragSession?.markerId ?? null,
-            pinnedMarkerIds
-          }
-        );
+        const markerNudge = isReducedMotion
+          ? null
+          : resolveRopeDrivenMarkerNudge(connection, anchors, nextSnapshot.restLength, {
+              draggedMarkerId: dragSession?.markerId ?? null,
+              pinnedMarkerIds
+            });
 
         if (markerNudge) {
           mergeMarkerDelta(markerDeltas, markerNudge.markerId, markerNudge.delta);
@@ -136,7 +137,8 @@ export function useStringPhysics(): void {
       mapMarkerConnectionSpecStore.subscribe(scheduleStep),
       mapMarkerRenderSpecStore.subscribe(scheduleStep),
       mapMarkerDragSessionStore.subscribe(scheduleStep),
-      mapPinnedMarkerIdsStore.subscribe(scheduleStep)
+      mapPinnedMarkerIdsStore.subscribe(scheduleStep),
+      mapVisualPreferencesStore.subscribe(scheduleStep)
     ];
 
     scheduleStep();

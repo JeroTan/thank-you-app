@@ -6,8 +6,6 @@ import {
 } from "@/utils/map/scale";
 import { toHexColorString } from "@/utils/visual/color";
 
-import { resolveMarkerViewportPosition } from "./markerPositioning";
-
 export type CanvasStringSpec = {
   key: string;
   markerAFrameColor: number;
@@ -25,12 +23,197 @@ type StringSceneState = {
   pixelRatio: number;
   tileOrigin: MapTileOrigin;
   worldSize?: { width: number; height: number };
+  reducedMotion: boolean;
 };
 
-type ViewportPoint = {
+export type ViewportPoint = {
   x: number;
   y: number;
 };
+
+type ViewportBounds = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
+const STRING_VIEWPORT_PADDING = 96;
+
+function resolveRawStringViewportPoints(
+  points: MapWorldOffset[],
+  scaleSnapshot: Pick<MapScaleSnapshot, "width" | "height" | "effectiveScale">,
+  tileOrigin: MapTileOrigin
+): ViewportPoint[] {
+  return points.map((point) => ({
+    x: scaleSnapshot.width / 2 + point.x * scaleSnapshot.effectiveScale + tileOrigin.x,
+    y: scaleSnapshot.height / 2 + point.y * scaleSnapshot.effectiveScale + tileOrigin.y
+  }));
+}
+
+function resolveViewportBounds(points: ViewportPoint[]): ViewportBounds {
+  return {
+    left: Math.min(...points.map((point) => point.x)),
+    right: Math.max(...points.map((point) => point.x)),
+    top: Math.min(...points.map((point) => point.y)),
+    bottom: Math.max(...points.map((point) => point.y))
+  };
+}
+
+function isPointNearViewport(
+  point: ViewportPoint,
+  viewport: Pick<MapScaleSnapshot, "width" | "height">,
+  padding: number
+): boolean {
+  return (
+    point.x >= -padding &&
+    point.x <= viewport.width + padding &&
+    point.y >= -padding &&
+    point.y <= viewport.height + padding
+  );
+}
+
+function areBoundsNearViewport(
+  bounds: ViewportBounds,
+  viewport: Pick<MapScaleSnapshot, "width" | "height">,
+  padding: number
+): boolean {
+  return !(
+    bounds.right < -padding ||
+    bounds.left > viewport.width + padding ||
+    bounds.bottom < -padding ||
+    bounds.top > viewport.height + padding
+  );
+}
+
+function resolveMidpoint(points: ViewportPoint[]): ViewportPoint {
+  const midpointIndex = Math.floor(points.length / 2);
+
+  return points[midpointIndex] ?? points[0] ?? { x: 0, y: 0 };
+}
+
+function shiftViewportPoints(
+  points: ViewportPoint[],
+  shiftX: number,
+  shiftY: number
+): ViewportPoint[] {
+  return points.map((point) => ({
+    x: point.x + shiftX,
+    y: point.y + shiftY
+  }));
+}
+
+function scoreViewportPoints(
+  points: ViewportPoint[],
+  viewport: Pick<MapScaleSnapshot, "width" | "height">
+): number {
+  const midpoint = resolveMidpoint(points);
+  const centerX = viewport.width / 2;
+  const centerY = viewport.height / 2;
+
+  return Math.hypot(midpoint.x - centerX, midpoint.y - centerY);
+}
+
+function wrapOffset(offset: number, wrapSize: number): number {
+  const halfSize = wrapSize / 2;
+
+  return ((((offset + halfSize) % wrapSize) + wrapSize) % wrapSize) - halfSize;
+}
+
+function resolveAnchorShift(
+  anchorPoint: ViewportPoint,
+  viewport: Pick<MapScaleSnapshot, "width" | "height">,
+  wrapWidth: number,
+  wrapHeight: number
+): { x: number; y: number } {
+  const rawOffsetX = anchorPoint.x - viewport.width / 2;
+  const rawOffsetY = anchorPoint.y - viewport.height / 2;
+
+  return {
+    x: wrapOffset(rawOffsetX, wrapWidth) - rawOffsetX,
+    y: wrapOffset(rawOffsetY, wrapHeight) - rawOffsetY
+  };
+}
+
+export function resolveConsistentStringViewportPoints(
+  points: MapWorldOffset[],
+  scaleSnapshot: Pick<MapScaleSnapshot, "width" | "height" | "effectiveScale">,
+  tileOrigin: MapTileOrigin,
+  worldSize?: { width: number; height: number },
+  padding = STRING_VIEWPORT_PADDING
+): ViewportPoint[] | null {
+  if (points.length < 2) {
+    return null;
+  }
+
+  const rawViewportPoints = resolveRawStringViewportPoints(points, scaleSnapshot, tileOrigin);
+  const firstRawPoint = rawViewportPoints[0];
+  const lastRawPoint = rawViewportPoints[rawViewportPoints.length - 1];
+
+  if (!firstRawPoint || !lastRawPoint) {
+    return null;
+  }
+
+  if (!worldSize) {
+    return rawViewportPoints;
+  }
+
+  const wrapWidth = worldSize.width * scaleSnapshot.effectiveScale;
+  const wrapHeight = worldSize.height * scaleSnapshot.effectiveScale;
+
+  if (
+    !Number.isFinite(wrapWidth) ||
+    !Number.isFinite(wrapHeight) ||
+    wrapWidth <= 0 ||
+    wrapHeight <= 0
+  ) {
+    return rawViewportPoints;
+  }
+
+  const anchorShifts = [
+    resolveAnchorShift(firstRawPoint, scaleSnapshot, wrapWidth, wrapHeight),
+    resolveAnchorShift(lastRawPoint, scaleSnapshot, wrapWidth, wrapHeight)
+  ];
+  const seenShifts = new Set<string>();
+  const candidates: ViewportPoint[][] = anchorShifts.flatMap((shift) => {
+    const key = `${shift.x}:${shift.y}`;
+
+    if (seenShifts.has(key)) {
+      return [];
+    }
+
+    seenShifts.add(key);
+
+    return [shiftViewportPoints(rawViewportPoints, shift.x, shift.y)];
+  });
+
+  const visibleCandidates = candidates.filter((candidate) => {
+    const firstPoint = candidate[0];
+    const lastPoint = candidate[candidate.length - 1];
+
+    if (!firstPoint || !lastPoint) {
+      return false;
+    }
+
+    return (
+      areBoundsNearViewport(resolveViewportBounds(candidate), scaleSnapshot, padding) &&
+      (isPointNearViewport(firstPoint, scaleSnapshot, padding) ||
+        isPointNearViewport(lastPoint, scaleSnapshot, padding))
+    );
+  });
+
+  if (visibleCandidates.length === 0) {
+    return null;
+  }
+
+  return (
+    visibleCandidates.sort(
+      (firstCandidate, secondCandidate) =>
+        scoreViewportPoints(firstCandidate, scaleSnapshot) -
+        scoreViewportPoints(secondCandidate, scaleSnapshot)
+    )[0] ?? null
+  );
+}
 
 class StringCanvasScene {
   public constructor(private readonly state: StringSceneState) {}
@@ -58,23 +241,21 @@ class StringCanvasScene {
       return;
     }
 
-    const viewportPoints = spec.points.map((point) =>
-      resolveMarkerViewportPosition(
-        point,
-        {
-          width: scaleSnapshot.width,
-          height: scaleSnapshot.height,
-          effectiveScale: scaleSnapshot.effectiveScale
-        },
-        this.state.tileOrigin,
-        this.state.worldSize
-      )
+    const viewportPoints = resolveConsistentStringViewportPoints(
+      spec.points,
+      scaleSnapshot,
+      this.state.tileOrigin,
+      this.state.worldSize
     );
+
+    if (!viewportPoints) {
+      return;
+    }
 
     context.save();
     context.globalAlpha = spec.isDimmed ? 0.18 : spec.isHighlighted ? 0.98 : 0.62;
 
-    if (spec.isHighlighted) {
+    if (spec.isHighlighted && !this.state.reducedMotion) {
       context.shadowColor = "rgba(248, 247, 242, 0.78)";
       context.shadowBlur = 18;
       context.lineWidth = 8;
@@ -82,9 +263,10 @@ class StringCanvasScene {
       this.strokeCurve(context, viewportPoints);
     }
 
-    context.shadowColor = spec.isHighlighted ? "rgba(248, 247, 242, 0.62)" : "transparent";
-    context.shadowBlur = spec.isHighlighted ? 10 : 0;
-    context.lineWidth = spec.isHighlighted ? 3.8 : 2.4;
+    context.shadowColor =
+      spec.isHighlighted && !this.state.reducedMotion ? "rgba(248, 247, 242, 0.62)" : "transparent";
+    context.shadowBlur = spec.isHighlighted && !this.state.reducedMotion ? 10 : 0;
+    context.lineWidth = spec.isHighlighted ? (this.state.reducedMotion ? 3 : 3.8) : 2.4;
     context.strokeStyle = this.resolveStrokeStyle(context, spec, viewportPoints);
     this.strokeCurve(context, viewportPoints);
     context.restore();
@@ -154,6 +336,7 @@ export class StringSceneBuilder {
   private pixelRatio = 1;
   private tileOrigin: MapTileOrigin = { x: 0, y: 0 };
   private worldSize?: { width: number; height: number };
+  private reducedMotion = false;
 
   public attachCanvas(canvas: HTMLCanvasElement): this {
     this.canvas = canvas;
@@ -193,6 +376,12 @@ export class StringSceneBuilder {
     return this;
   }
 
+  public withReducedMotion(reducedMotion: boolean): this {
+    this.reducedMotion = reducedMotion;
+
+    return this;
+  }
+
   public build(): StringCanvasScene {
     if (!this.canvas) {
       throw new Error("StringSceneBuilder requires a canvas before build().");
@@ -228,7 +417,8 @@ export class StringSceneBuilder {
       scaleSnapshot: this.scaleSnapshot,
       pixelRatio: this.pixelRatio,
       tileOrigin: this.tileOrigin,
-      worldSize: this.worldSize
+      worldSize: this.worldSize,
+      reducedMotion: this.reducedMotion
     });
   }
 }
